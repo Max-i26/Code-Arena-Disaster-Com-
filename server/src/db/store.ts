@@ -1,0 +1,279 @@
+import { 
+  CitizenReport, 
+  HazardCase, 
+  SensorTelemetry, 
+  Shelter, 
+  FieldCrew, 
+  CouncilTicket, 
+  ReliefRequest, 
+  SystemConfig, 
+  AiTuningLog 
+} from '../types';
+import { WARDS, SENSORS, SHELTERS, FIELD_CREWS, INITIAL_CASES, INITIAL_CONFIG, WardDefinition } from './mockData';
+
+class StateStore {
+  private wards: WardDefinition[] = [...WARDS];
+  private sensors: SensorTelemetry[] = JSON.parse(JSON.stringify(SENSORS));
+  private shelters: Shelter[] = JSON.parse(JSON.stringify(SHELTERS));
+  private fieldCrews: FieldCrew[] = JSON.parse(JSON.stringify(FIELD_CREWS));
+  private cases: HazardCase[] = JSON.parse(JSON.stringify(INITIAL_CASES));
+  private reports: CitizenReport[] = [];
+  private tickets: CouncilTicket[] = [
+    {
+      id: 'ticket-01',
+      caseId: 'case-01',
+      createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+      wardId: 'ward-02',
+      hazardType: 'FLOOD',
+      urgency: 'CRITICAL',
+      status: 'DISPATCHED',
+      assignedCrewId: 'crew-03',
+      assignedCrewName: 'Navy Disaster Rescue Boat Squad A',
+      detourRoute: [
+        { lat: 6.9500, lng: 79.8800, instruction: 'Take Grandpass North Expressway' },
+        { lat: 6.9650, lng: 79.8880, instruction: 'Bypass Kelani Bridge via Kandy Road Overpass' },
+      ],
+    },
+    {
+      id: 'ticket-02',
+      caseId: 'case-02',
+      createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+      wardId: 'ward-01',
+      hazardType: 'FALLEN_TREE',
+      urgency: 'HIGH',
+      status: 'OPEN',
+      assignedCrewId: undefined,
+    },
+  ];
+  private reliefRequests: ReliefRequest[] = [
+    {
+      id: 'relief-req-01',
+      caseId: 'case-01',
+      reportId: 'rep-init-01',
+      citizenName: 'Sunil Perera',
+      citizenPhone: '+94 77 987 6543',
+      householdCount: 4,
+      specialNeeds: ['Elderly grandmother with mobility restriction', 'Drinking water shortage'],
+      location: {
+        lat: 6.9580,
+        lng: 79.8910,
+        roadName: 'Kelani River View Lane',
+        roadHierarchy: 'LOCAL_STREET',
+        wardId: 'ward-02',
+        wardName: 'Kelani River Basin',
+      },
+      urgency: 'HIGH',
+      status: 'QUEUED',
+      createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    },
+  ];
+  private config: SystemConfig = { ...INITIAL_CONFIG };
+  private aiTuningLogs: AiTuningLog[] = [];
+  private bannedUsers: Set<string> = new Set();
+  private subscribers: ((event: { type: string; payload: any }) => void)[] = [];
+
+  // Broadcast to WebSockets / SSE
+  public subscribe(callback: (event: { type: string; payload: any }) => void) {
+    this.subscribers.push(callback);
+    return () => {
+      this.subscribers = this.subscribers.filter(cb => cb !== callback);
+    };
+  }
+
+  public emit(type: string, payload: any) {
+    this.subscribers.forEach(cb => {
+      try {
+        cb({ type, payload });
+      } catch (err) {
+        console.error('Error emitting state event:', err);
+      }
+    });
+  }
+
+  // Wards
+  public getWards(): WardDefinition[] {
+    return this.wards;
+  }
+
+  public getWardById(id: string): WardDefinition | undefined {
+    return this.wards.find(w => w.id === id);
+  }
+
+  // Sensors
+  public getSensors(): SensorTelemetry[] {
+    return this.sensors;
+  }
+
+  public updateSensor(stationId: string, updates: Partial<SensorTelemetry>): SensorTelemetry | undefined {
+    const idx = this.sensors.findIndex(s => s.stationId === stationId);
+    if (idx >= 0) {
+      this.sensors[idx] = { ...this.sensors[idx], ...updates, updatedAt: new Date().toISOString() };
+      this.emit('SENSOR_UPDATED', this.sensors[idx]);
+      return this.sensors[idx];
+    }
+    return undefined;
+  }
+
+  // Reports
+  public addReport(report: CitizenReport): CitizenReport {
+    this.reports.unshift(report);
+    this.emit('REPORT_CREATED', report);
+    return report;
+  }
+
+  public getReports(): CitizenReport[] {
+    return this.reports;
+  }
+
+  // Cases
+  public addCase(hazardCase: HazardCase): HazardCase {
+    this.cases.unshift(hazardCase);
+    this.emit('CASE_CREATED', hazardCase);
+    return hazardCase;
+  }
+
+  public getCases(): HazardCase[] {
+    return this.cases;
+  }
+
+  public getCaseById(id: string): HazardCase | undefined {
+    return this.cases.find(c => c.id === id);
+  }
+
+  public updateCase(id: string, updates: Partial<HazardCase>): HazardCase | undefined {
+    const idx = this.cases.findIndex(c => c.id === id);
+    if (idx >= 0) {
+      this.cases[idx] = { ...this.cases[idx], ...updates };
+      this.emit('CASE_UPDATED', this.cases[idx]);
+      return this.cases[idx];
+    }
+    return undefined;
+  }
+
+  // Shelters
+  public getShelters(): Shelter[] {
+    return this.shelters;
+  }
+
+  public getShelterById(id: string): Shelter | undefined {
+    return this.shelters.find(s => s.id === id);
+  }
+
+  public updateShelter(id: string, updates: Partial<Shelter>): Shelter | undefined {
+    const idx = this.shelters.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      this.shelters[idx] = { ...this.shelters[idx], ...updates };
+      this.emit('SHELTER_UPDATED', this.shelters[idx]);
+      return this.shelters[idx];
+    }
+    return undefined;
+  }
+
+  // Field Crews
+  public getFieldCrews(): FieldCrew[] {
+    return this.fieldCrews;
+  }
+
+  public getFieldCrewById(id: string): FieldCrew | undefined {
+    return this.fieldCrews.find(c => c.id === id);
+  }
+
+  public updateFieldCrew(id: string, updates: Partial<FieldCrew>): FieldCrew | undefined {
+    const idx = this.fieldCrews.findIndex(c => c.id === id);
+    if (idx >= 0) {
+      this.fieldCrews[idx] = { ...this.fieldCrews[idx], ...updates };
+      this.emit('CREW_UPDATED', this.fieldCrews[idx]);
+      return this.fieldCrews[idx];
+    }
+    return undefined;
+  }
+
+  // Council Tickets
+  public getTickets(): CouncilTicket[] {
+    return this.tickets;
+  }
+
+  public getTicketById(id: string): CouncilTicket | undefined {
+    return this.tickets.find(t => t.id === id);
+  }
+
+  public addTicket(ticket: CouncilTicket): CouncilTicket {
+    this.tickets.unshift(ticket);
+    this.emit('TICKET_CREATED', ticket);
+    return ticket;
+  }
+
+  public updateTicket(id: string, updates: Partial<CouncilTicket>): CouncilTicket | undefined {
+    const idx = this.tickets.findIndex(t => t.id === id);
+    if (idx >= 0) {
+      this.tickets[idx] = { ...this.tickets[idx], ...updates };
+      this.emit('TICKET_UPDATED', this.tickets[idx]);
+      return this.tickets[idx];
+    }
+    return undefined;
+  }
+
+  // Relief Requests
+  public getReliefRequests(): ReliefRequest[] {
+    return this.reliefRequests;
+  }
+
+  public addReliefRequest(request: ReliefRequest): ReliefRequest {
+    this.reliefRequests.unshift(request);
+    this.emit('RELIEF_REQUEST_CREATED', request);
+    return request;
+  }
+
+  public updateReliefRequest(id: string, updates: Partial<ReliefRequest>): ReliefRequest | undefined {
+    const idx = this.reliefRequests.findIndex(r => r.id === id);
+    if (idx >= 0) {
+      this.reliefRequests[idx] = { ...this.reliefRequests[idx], ...updates };
+      this.emit('RELIEF_REQUEST_UPDATED', this.reliefRequests[idx]);
+      return this.reliefRequests[idx];
+    }
+    return undefined;
+  }
+
+  // System Config
+  public getConfig(): SystemConfig {
+    return this.config;
+  }
+
+  public updateConfig(updates: Partial<SystemConfig>): SystemConfig {
+    this.config = { ...this.config, ...updates };
+    this.emit('CONFIG_UPDATED', this.config);
+    return this.config;
+  }
+
+  // AI Tuning Logs
+  public getAiTuningLogs(): AiTuningLog[] {
+    return this.aiTuningLogs;
+  }
+
+  public addAiTuningLog(log: AiTuningLog): AiTuningLog {
+    this.aiTuningLogs.unshift(log);
+    this.emit('AI_TUNING_LOG_ADDED', log);
+    return log;
+  }
+
+  // Banned Users
+  public banUser(userId: string) {
+    this.bannedUsers.add(userId);
+    this.emit('USER_BANNED', { userId });
+  }
+
+  public unbanUser(userId: string) {
+    this.bannedUsers.delete(userId);
+    this.emit('USER_UNBANNED', { userId });
+  }
+
+  public isUserBanned(userId: string): boolean {
+    return this.bannedUsers.has(userId);
+  }
+
+  public getBannedUsers(): string[] {
+    return Array.from(this.bannedUsers);
+  }
+}
+
+export const store = new StateStore();

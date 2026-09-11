@@ -1,0 +1,171 @@
+{
+  "info": {
+    "_postman_id": "7c6a3105-979d-4260-95dd-ca66f6fc043b",
+    "name": "ResQCity Disaster Response API (Topic 04)",
+    "description": "Comprehensive Postman Test Collection for ResQCity: 6-Stage Urban Flood & Hazard Verification Architecture",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "01 - Get Complete System State",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/state"
+      }
+    },
+    {
+      "name": "02 - Citizen Hazard Report (6-Stage Pipeline)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"citizen-101\",\n  \"userName\": \"Saman Kumara\",\n  \"contactPhone\": \"+94 77 123 4567\",\n  \"hazardType\": \"FLOOD\",\n  \"severity\": \"HIGH\",\n  \"lat\": 6.958,\n  \"lng\": 79.891,\n  \"roadName\": \"Kelani Flood Embankment Road\",\n  \"imageUrl\": \"https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80\",\n  \"description\": \"Rapid water surge over road curb, 3 feet water depth on main road\",\n  \"needsRescue\": true,\n  \"householdCount\": 4,\n  \"specialNeeds\": [\"Elderly patient\"]\n}"
+        },
+        "url": "{{baseUrl}}/api/reports"
+      }
+    },
+    {
+      "name": "03 - Community Verification Loop",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"citizen-nearby-55\",\n  \"confirmed\": true,\n  \"note\": \"Confirmed by neighbor: water is rising rapidly across the road.\"\n}"
+        },
+        "url": "{{baseUrl}}/api/cases/case-01/verify"
+      }
+    },
+    {
+      "name": "04 - Council Ticket Crew Dispatch",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"crewId\": \"crew-01\"\n}"
+        },
+        "url": "{{baseUrl}}/api/tickets/ticket-02/dispatch"
+      }
+    },
+    {
+      "name": "05 - Field Crew Job Resolution with Photo",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"resolutionPhotoUrl\": \"https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=800&q=80\",\n  \"resolutionNotes\": \"Tree trunk cleared using chainsaw squad and road swept clear for traffic.\"\n}"
+        },
+        "url": "{{baseUrl}}/api/tickets/ticket-02/resolve"
+      }
+    },
+    {
+      "name": "06 - Auto-Match Relief Shelter",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reliefRequestId\": \"relief-req-01\"\n}"
+        },
+        "url": "{{baseUrl}}/api/relief/match"
+      }
+    },
+    {
+      "name": "07 - Stage 06 Human AI Feedback Loop",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"action\": \"AGREED\",\n  \"notes\": \"AI diagnostic confirmed by senior municipal engineer.\"\n}"
+        },
+        "url": "{{baseUrl}}/api/cases/case-01/feedback"
+      }
+    },
+    {
+      "name": "08 - Update AI System Configuration",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"aiConfidenceThreshold\": 0.70,\n  \"autoCloseRoadOnCritical\": true,\n  \"weatherRainfallDangerMmH\": 30.0,\n  \"riverLevelDangerPct\": 75.0\n}"
+        },
+        "url": "{{baseUrl}}/api/config"
+      }
+    },
+    {
+      "name": "09 - Ban Spam Reporter",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"spammer-999\"\n}"
+        },
+        "url": "{{baseUrl}}/api/users/ban"
+      }
+    },
+    {
+      "name": "10 - Set Storm Simulation Phase",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"stepIndex\": 2\n}"
+        },
+        "url": "{{baseUrl}}/api/simulation/step"
+      }
+    },
+    {
+      "name": "11 - Calculate Safe Detour Route",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"startLat\": 6.940,\n  \"startLng\": 79.860,\n  \"endLat\": 6.965,\n  \"endLng\": 79.895\n}"
+        },
+        "url": "{{baseUrl}}/api/route/safe"
+      }
+    }
+  ]
+}

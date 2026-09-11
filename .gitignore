@@ -1,0 +1,7 @@
+node_modules/
+client/node_modules/
+dist/
+client/dist/
+*.log
+.DS_Store
+.system_generated/
