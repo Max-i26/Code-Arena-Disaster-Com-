@@ -10,7 +10,8 @@ import {
   FieldCrew, 
   ReliefRequest, 
   SensorTelemetry, 
-  AiTuningLog 
+  AiTuningLog,
+  CitizenReport
 } from '../types';
 
 export interface DbUser {
@@ -42,6 +43,7 @@ class DatabaseService {
   private tables = {
     users: new Map<string, DbUser>(),
     cases: new Map<string, HazardCase>(),
+    reports: new Map<string, CitizenReport>(),
     tickets: new Map<string, CouncilTicket>(),
     shelters: new Map<string, Shelter>(),
     field_crews: new Map<string, FieldCrew>(),
@@ -83,6 +85,10 @@ class DatabaseService {
         const cases = data.cases;
         if (cases && Array.isArray(cases)) {
           for (const c of cases) if (c && c.id) this.tables.cases.set(c.id, c);
+        }
+        const reports = data.reports;
+        if (reports && Array.isArray(reports)) {
+          for (const r of reports) if (r && r.id) this.tables.reports.set(r.id, r);
         }
         const tickets = data.tickets;
         if (tickets && Array.isArray(tickets)) {
@@ -300,6 +306,7 @@ class DatabaseService {
       const payload = {
         users: Array.from(this.tables.users.values()),
         cases: Array.from(this.tables.cases.values()),
+        reports: Array.from(this.tables.reports.values()),
         tickets: Array.from(this.tables.tickets.values()),
         shelters: Array.from(this.tables.shelters.values()),
         field_crews: Array.from(this.tables.field_crews.values()),
@@ -409,6 +416,29 @@ class DatabaseService {
       for (const colDef of caseColumns) {
         try { await this.pool.query(`ALTER TABLE \`cases\` ADD COLUMN ${colDef}`); } catch (e) { }
       }
+
+      // 2b. Table: reports
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`reports\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`created_at\` DATETIME,
+          \`user_id\` VARCHAR(128),
+          \`user_name\` VARCHAR(128),
+          \`user_trust_score\` FLOAT,
+          \`hazard_type\` VARCHAR(64),
+          \`severity\` VARCHAR(32),
+          \`road_name\` VARCHAR(255),
+          \`ward_id\` VARCHAR(64),
+          \`lat\` FLOAT,
+          \`lng\` FLOAT,
+          \`image_url\` LONGTEXT,
+          \`description\` LONGTEXT,
+          \`needs_rescue\` BOOLEAN DEFAULT FALSE,
+          \`household_count\` INT DEFAULT 1,
+          \`contact_phone\` VARCHAR(64),
+          \`status\` VARCHAR(64)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
 
       // 3. Table: tickets
       await this.pool.query(`
@@ -731,6 +761,98 @@ class DatabaseService {
     return null;
   }
 
+  public async getUserByNic(nicNumber: string, excludeUserId?: string): Promise<DbUser | null> {
+    if (!nicNumber || !nicNumber.trim()) return null;
+    const cleanNic = nicNumber.trim().toUpperCase();
+
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        let query = 'SELECT * FROM `users` WHERE UPPER(TRIM(`nic_number`)) = ?';
+        const params: any[] = [cleanNic];
+        if (excludeUserId) {
+          query += ' AND `id` != ?';
+          params.push(excludeUserId);
+        }
+        const [rows]: any = await this.pool.query(query, params);
+        if (rows && rows.length > 0) {
+          const r = rows[0];
+          return {
+            id: r.id,
+            username: r.username,
+            passwordHash: r.password_hash,
+            fullName: r.full_name,
+            email: r.email,
+            role: r.role as UserRole,
+            phone: r.phone,
+            wardId: r.ward_id,
+            trustScore: r.trust_score,
+            createdAt: r.created_at,
+            verificationStatus: r.verification_status || 'APPROVED',
+            nicNumber: r.nic_number,
+            nicDocumentUrl: r.nic_document_url,
+            officialDetails: r.official_details,
+          };
+        }
+      } catch (err) {
+        console.error('MySQL query error in getUserByNic:', err);
+      }
+    }
+
+    for (const u of this.tables.users.values()) {
+      if (excludeUserId && u.id === excludeUserId) continue;
+      if (u.nicNumber && u.nicNumber.trim().toUpperCase() === cleanNic) {
+        return u;
+      }
+    }
+    return null;
+  }
+
+  public async getUserByEmail(email: string, excludeUserId?: string): Promise<DbUser | null> {
+    if (!email || !email.trim()) return null;
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        let query = 'SELECT * FROM `users` WHERE LOWER(TRIM(`email`)) = ?';
+        const params: any[] = [cleanEmail];
+        if (excludeUserId) {
+          query += ' AND `id` != ?';
+          params.push(excludeUserId);
+        }
+        const [rows]: any = await this.pool.query(query, params);
+        if (rows && rows.length > 0) {
+          const r = rows[0];
+          return {
+            id: r.id,
+            username: r.username,
+            passwordHash: r.password_hash,
+            fullName: r.full_name,
+            email: r.email,
+            role: r.role as UserRole,
+            phone: r.phone,
+            wardId: r.ward_id,
+            trustScore: r.trust_score,
+            createdAt: r.created_at,
+            verificationStatus: r.verification_status || 'APPROVED',
+            nicNumber: r.nic_number,
+            nicDocumentUrl: r.nic_document_url,
+            officialDetails: r.official_details,
+          };
+        }
+      } catch (err) {
+        console.error('MySQL query error in getUserByEmail:', err);
+      }
+    }
+
+    for (const u of this.tables.users.values()) {
+      if (excludeUserId && u.id === excludeUserId) continue;
+      if (u.email && u.email.trim().toLowerCase() === cleanEmail) {
+        return u;
+      }
+    }
+    return null;
+  }
+
   public async getAllUsers(): Promise<DbUser[]> {
     const allUsers: DbUser[] = [];
     if (this.isConnectedToMysql && this.pool) {
@@ -768,7 +890,31 @@ class DatabaseService {
   public async createUser(user: DbUser): Promise<DbUser> {
     const cleanUsername = user.username.toLowerCase().trim();
     user.username = cleanUsername;
+    if (user.email) user.email = user.email.toLowerCase().trim();
+    if (user.nicNumber) user.nicNumber = user.nicNumber.toUpperCase().trim();
     
+    // Check for duplicate username
+    const existingUser = await this.getUserByUsername(cleanUsername);
+    if (existingUser && existingUser.id !== user.id) {
+      throw new Error(`Username "${user.username}" is already taken. Please choose another.`);
+    }
+
+    // Check for duplicate NIC (CRITICAL: Every NIC must be unique across all users)
+    if (user.nicNumber) {
+      const existingNicUser = await this.getUserByNic(user.nicNumber, user.id);
+      if (existingNicUser) {
+        throw new Error(`NIC Number "${user.nicNumber}" is already registered to user "${existingNicUser.username}". NIC must be unique.`);
+      }
+    }
+
+    // Check for duplicate email if provided
+    if (user.email) {
+      const existingEmailUser = await this.getUserByEmail(user.email, user.id);
+      if (existingEmailUser) {
+        throw new Error(`Email address "${user.email}" is already registered to user "${existingEmailUser.username}".`);
+      }
+    }
+
     // All registrations require Admin approval except Citizens and System Admins
     if (user.verificationStatus === undefined) {
       const isOfficialRole = user.role === 'COUNCIL_OFFICER' || user.role === 'FIELD_CREW' || user.role === 'RELIEF_DESK';
@@ -907,6 +1053,105 @@ class DatabaseService {
         );
       } catch (err: any) {
         console.error('[ResQCity SQL DB] Failed to save case in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async saveReport(r: CitizenReport) {
+    this.tables.reports.set(r.id, r);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query(
+          `INSERT INTO \`reports\` (\`id\`, \`created_at\`, \`user_id\`, \`user_name\`, \`user_trust_score\`, \`hazard_type\`, \`severity\`, \`road_name\`, \`ward_id\`, \`lat\`, \`lng\`, \`image_url\`, \`description\`, \`needs_rescue\`, \`household_count\`, \`contact_phone\`, \`status\`)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`)`,
+          [
+            r.id,
+            this.toMysqlDatetime(r.createdAt),
+            r.userId || '',
+            r.userName || 'Citizen User',
+            r.userTrustScore || 0.85,
+            r.hazardType || 'FLOOD',
+            r.severity || 'HIGH',
+            r.location?.roadName || 'Main Corridor',
+            r.location?.wardId || 'ward-01',
+            r.location?.lat ?? 6.9344,
+            r.location?.lng ?? 79.8428,
+            r.imageUrl || '',
+            r.description || '',
+            r.needsRescue ? 1 : 0,
+            r.householdCount || 1,
+            r.contactPhone || '',
+            r.status || 'PROCESSED'
+          ]
+        );
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to save report in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async deleteCase(id: string) {
+    this.tables.cases.delete(id);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('DELETE FROM `cases` WHERE `id` = ?', [id]);
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to delete case in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async deleteTicket(id: string) {
+    this.tables.tickets.delete(id);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('DELETE FROM `tickets` WHERE `id` = ?', [id]);
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to delete ticket in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async deleteTicketByCaseId(caseId: string) {
+    for (const [key, val] of this.tables.tickets.entries()) {
+      if (val.caseId === caseId) {
+        this.tables.tickets.delete(key);
+      }
+    }
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('DELETE FROM `tickets` WHERE `case_id` = ?', [caseId]);
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to delete ticket by case_id in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async deleteShelter(id: string) {
+    this.tables.shelters.delete(id);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('DELETE FROM `shelters` WHERE `id` = ?', [id]);
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to delete shelter in MySQL:', err.message);
+      }
+    }
+  }
+
+  public async deleteFieldCrew(id: string) {
+    this.tables.field_crews.delete(id);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('DELETE FROM `field_crews` WHERE `id` = ?', [id]);
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Failed to delete field crew in MySQL:', err.message);
       }
     }
   }
@@ -1061,6 +1306,7 @@ class DatabaseService {
       activeTables: [
         'users',
         'cases',
+        'reports',
         'tickets',
         'shelters',
         'field_crews',
@@ -1072,6 +1318,7 @@ class DatabaseService {
       tableCounts: {
         users: this.tables.users.size,
         cases: this.tables.cases.size,
+        reports: this.tables.reports.size,
         tickets: this.tables.tickets.size,
         shelters: this.tables.shelters.size,
         field_crews: this.tables.field_crews.size,

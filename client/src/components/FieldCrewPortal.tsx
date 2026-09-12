@@ -342,14 +342,21 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
     : null;
 
   const handleResolve = async (ticketId: string) => {
+    if (!resolutionNotes || resolutionNotes.trim().length < 5) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter resolution notes (at least 5 characters) detailing the repair work done.");
+      return;
+    }
+    if (!resolutionPhotoUrl || !resolutionPhotoUrl.trim()) {
+      alert("⚠️ Input Validation Error:\n\nPlease attach or select a photo of the completed resolution.");
+      return;
+    }
     try {
       setIsResolving(ticketId);
       await api.resolveTicket(ticketId, {
-        resolutionPhotoUrl,
-        resolutionNotes:
-          resolutionNotes || "Work order completed. Hazard cleared, road open to traffic.",
+        resolutionPhotoUrl: resolutionPhotoUrl.trim(),
+        resolutionNotes: resolutionNotes.trim(),
       });
-      alert("Job marked as RESOLVED! Hazard cleared from live public map and road opened.");
+      alert("✅ Job marked as RESOLVED! Hazard cleared from live public map and recorded in MySQL.");
       onRefresh();
     } catch (err: any) {
       alert(`Failed to resolve ticket: ${err.message}`);
@@ -393,8 +400,17 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
 
   const handleCreateCrew = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCrew.name.trim()) {
-      alert('Response squad name is required');
+    if (!newCrew.name.trim() || newCrew.name.trim().length < 3) {
+      alert('⚠️ Input Validation Error:\n\nResponse squad name is required (at least 3 characters).');
+      return;
+    }
+    const dup = state.fieldCrews.find(c => c.name.toLowerCase().trim() === newCrew.name.toLowerCase().trim());
+    if (dup) {
+      alert(`⚠️ Input Validation Error:\n\nA response squad named "${newCrew.name.trim()}" already exists. Please choose a distinct name.`);
+      return;
+    }
+    if (newCrew.contactPhone && newCrew.contactPhone.replace(/\D/g, '').length < 9) {
+      alert('⚠️ Input Validation Error:\n\nPlease enter a valid contact phone number (at least 9 digits).');
       return;
     }
     try {
@@ -408,9 +424,9 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
           lng: ward ? ward.center[1] : 79.8612,
         },
         status: 'AVAILABLE',
-        contactPhone: newCrew.contactPhone,
+        contactPhone: newCrew.contactPhone.trim(),
       });
-      alert(`New response squad "${newCrew.name}" registered successfully!`);
+      alert(`✅ New response squad "${newCrew.name}" registered and saved in MySQL successfully!`);
       setAddCrewOpen(false);
       setNewCrew({
         name: '',
@@ -420,7 +436,7 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
       });
       onRefresh();
     } catch (err: any) {
-      alert(`Failed to register squad: ${err.message}`);
+      alert(`⚠️ Failed to register squad:\n\n${err.message}`);
     } finally {
       setIsCreatingCrew(false);
     }
@@ -437,14 +453,32 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
   };
 
   const handleSaveEditCrew = async (id: string) => {
+    if (!editCrewForm.name.trim() || editCrewForm.name.trim().length < 3) {
+      alert('⚠️ Input Validation Error:\n\nResponse squad name must be at least 3 characters.');
+      return;
+    }
+    const dup = state.fieldCrews.find(c => c.id !== id && c.name.toLowerCase().trim() === editCrewForm.name.toLowerCase().trim());
+    if (dup) {
+      alert(`⚠️ Input Validation Error:\n\nAnother squad named "${editCrewForm.name.trim()}" already exists.`);
+      return;
+    }
+    if (editCrewForm.contactPhone && editCrewForm.contactPhone.replace(/\D/g, '').length < 9) {
+      alert('⚠️ Input Validation Error:\n\nPlease enter a valid contact phone number (at least 9 digits).');
+      return;
+    }
     try {
       setIsSavingCrewEdit(true);
-      await api.updateFieldCrew(id, editCrewForm);
-      alert('Response squad updated successfully!');
+      await api.updateFieldCrew(id, {
+        name: editCrewForm.name.trim(),
+        specialization: editCrewForm.specialization,
+        status: editCrewForm.status,
+        contactPhone: editCrewForm.contactPhone.trim(),
+      });
+      alert('✅ Response squad updated and saved in MySQL successfully!');
       setEditingCrewId(null);
       onRefresh();
     } catch (err: any) {
-      alert(`Update failed: ${err.message}`);
+      alert(`⚠️ Update failed:\n\n${err.message}`);
     } finally {
       setIsSavingCrewEdit(false);
     }

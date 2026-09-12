@@ -106,8 +106,21 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
 
   const handleCreateShelter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newShelter.name.trim()) {
-      alert('Shelter name is required');
+    if (!newShelter.name.trim() || newShelter.name.trim().length < 3) {
+      alert('⚠️ Input Validation Error:\n\nShelter name is required (at least 3 characters).');
+      return;
+    }
+    const dup = state.shelters.find(s => s.name.toLowerCase().trim() === newShelter.name.toLowerCase().trim());
+    if (dup) {
+      alert(`⚠️ Input Validation Error:\n\nA shelter named "${newShelter.name.trim()}" already exists. Please choose a distinct name.`);
+      return;
+    }
+    if (isNaN(Number(newShelter.totalCapacity)) || Number(newShelter.totalCapacity) < 1) {
+      alert('⚠️ Input Validation Error:\n\nTotal shelter capacity must be a positive number greater than 0.');
+      return;
+    }
+    if (newShelter.contactPhone && newShelter.contactPhone.replace(/\D/g, '').length < 9) {
+      alert('⚠️ Input Validation Error:\n\nPlease enter a valid contact phone number (at least 9 digits).');
       return;
     }
     try {
@@ -134,7 +147,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
         contactPhone: newShelter.contactPhone,
         isOpen: true,
       });
-      alert(`New shelter "${newShelter.name}" added successfully!`);
+      alert(`✅ New shelter "${newShelter.name}" registered and saved in MySQL successfully!`);
       setAddShelterOpen(false);
       setNewShelter({
         name: '',
@@ -149,7 +162,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
       });
       onRefresh();
     } catch (err: any) {
-      alert(`Failed to add shelter: ${err.message}`);
+      alert(`⚠️ Failed to create shelter:\n\n${err.message}`);
     } finally {
       setIsCreatingShelter(false);
     }

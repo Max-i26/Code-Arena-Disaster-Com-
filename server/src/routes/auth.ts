@@ -2,6 +2,14 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { dbService, DbUser } from '../db/databaseService';
+import { 
+  validateNicFormat, 
+  validateEmail, 
+  validatePhone, 
+  validateUsername, 
+  validatePassword, 
+  validateFullName 
+} from '../utils/validation';
 
 export const authRouter = Router();
 
@@ -14,7 +22,7 @@ authRouter.post('/register', async (req, res) => {
       username, 
       password, 
       fullName, 
-      email, 
+      email = '', 
       role = 'CITIZEN', 
       phone = '', 
       wardId = 'ward-01',
@@ -23,8 +31,22 @@ authRouter.post('/register', async (req, res) => {
       officialDetails = ''
     } = req.body;
 
-    if (!username || !password || !fullName) {
-      return res.status(400).json({ error: 'Username, password, and full name are required.' });
+    // Validate Username
+    const userVal = validateUsername(username);
+    if (!userVal.valid) {
+      return res.status(400).json({ error: userVal.error });
+    }
+
+    // Validate Password
+    const passVal = validatePassword(password);
+    if (!passVal.valid) {
+      return res.status(400).json({ error: passVal.error });
+    }
+
+    // Validate Full Name
+    const nameVal = validateFullName(fullName);
+    if (!nameVal.valid) {
+      return res.status(400).json({ error: nameVal.error });
     }
 
     // Admin registration protection
@@ -32,17 +54,67 @@ authRouter.post('/register', async (req, res) => {
       return res.status(403).json({ error: 'System Admin accounts cannot be created via public registration. Admin accounts can only be created by an existing System Administrator.' });
     }
 
-    // Official personnel NIC & document verification check
+    // Official personnel verification check
     const isOfficialRole = role === 'COUNCIL_OFFICER' || role === 'FIELD_CREW' || role === 'RELIEF_DESK';
     if (isOfficialRole) {
-      if (!nicNumber.trim() || !nicDocumentUrl.trim()) {
-        return res.status(400).json({ error: 'NIC (National Identity Card) Number and uploaded NIC Document proof are required for official personnel account registration.' });
+      if (!nicNumber || !nicNumber.trim()) {
+        return res.status(400).json({ error: 'NIC (National Identity Card) Number is required for official personnel account registration.' });
+      }
+      if (!nicDocumentUrl || !nicDocumentUrl.trim()) {
+        return res.status(400).json({ error: 'Uploaded NIC Document proof photo is required for official personnel account registration.' });
+      }
+      if (!officialDetails || !officialDetails.trim()) {
+        return res.status(400).json({ error: 'Official department / unit designation details are required for official personnel registration.' });
       }
     }
 
-    // Check existing user
-    const existing = await dbService.getUserByUsername(username);
-    if (existing) {
+    // Validate NIC format & uniqueness if provided (always mandatory for official roles)
+    let cleanNic = '';
+    if (nicNumber && nicNumber.trim()) {
+      cleanNic = nicNumber.trim().toUpperCase();
+      const nicVal = validateNicFormat(cleanNic);
+      if (!nicVal.valid) {
+        return res.status(400).json({ error: nicVal.error });
+      }
+
+      // Check NIC Uniqueness across all accounts in MySQL & DB
+      const existingNicUser = await dbService.getUserByNic(cleanNic);
+      if (existingNicUser) {
+        return res.status(400).json({ 
+          error: `NIC Number "${cleanNic}" is already registered by user "${existingNicUser.username}". A National Identity Card number can only be linked to one unique account.` 
+        });
+      }
+    }
+
+    // Validate Email format & uniqueness if provided
+    let cleanEmail = (email || '').trim().toLowerCase();
+    if (cleanEmail) {
+      const emailVal = validateEmail(cleanEmail);
+      if (!emailVal.valid) {
+        return res.status(400).json({ error: emailVal.error });
+      }
+      const existingEmailUser = await dbService.getUserByEmail(cleanEmail);
+      if (existingEmailUser) {
+        return res.status(400).json({ 
+          error: `Email address "${cleanEmail}" is already registered to user "${existingEmailUser.username}". Please log in or use another email.` 
+        });
+      }
+    } else {
+      cleanEmail = `${username.toLowerCase().trim()}@resqcity.lk`;
+    }
+
+    // Validate Phone format if provided
+    let cleanPhone = (phone || '').trim();
+    if (cleanPhone) {
+      const phoneVal = validatePhone(cleanPhone);
+      if (!phoneVal.valid) {
+        return res.status(400).json({ error: phoneVal.error });
+      }
+    }
+
+    // Check existing username
+    const existingUsername = await dbService.getUserByUsername(username);
+    if (existingUsername) {
       return res.status(400).json({ error: `Username "${username}" is already taken. Please log in or choose another.` });
     }
 
@@ -56,15 +128,15 @@ authRouter.post('/register', async (req, res) => {
       username: username.toLowerCase().trim(),
       passwordHash: hash,
       fullName: fullName.trim(),
-      email: email || `${username}@resqcity.lk`,
+      email: cleanEmail,
       role,
-      phone,
+      phone: cleanPhone,
       wardId,
       trustScore: role === 'CITIZEN' ? 0.85 : 1.0,
       createdAt: new Date().toISOString(),
       verificationStatus,
-      nicNumber: nicNumber.trim(),
-      nicDocumentUrl: nicDocumentUrl,
+      nicNumber: cleanNic,
+      nicDocumentUrl: (nicDocumentUrl || '').trim(),
       officialDetails: officialDetails.trim(),
     };
 
@@ -207,8 +279,46 @@ authRouter.post('/create-admin', async (req, res) => {
   try {
     const { username, password, fullName, email = '', phone = '' } = req.body;
 
-    if (!username || !password || !fullName) {
-      return res.status(400).json({ error: 'Username, password, and full name are required to create an Admin.' });
+    // Validate Username
+    const userVal = validateUsername(username);
+    if (!userVal.valid) {
+      return res.status(400).json({ error: userVal.error });
+    }
+
+    // Validate Password
+    const passVal = validatePassword(password);
+    if (!passVal.valid) {
+      return res.status(400).json({ error: passVal.error });
+    }
+
+    // Validate Full Name
+    const nameVal = validateFullName(fullName);
+    if (!nameVal.valid) {
+      return res.status(400).json({ error: nameVal.error });
+    }
+
+    // Validate Email if provided
+    let cleanEmail = (email || '').trim().toLowerCase();
+    if (cleanEmail) {
+      const emailVal = validateEmail(cleanEmail);
+      if (!emailVal.valid) {
+        return res.status(400).json({ error: emailVal.error });
+      }
+      const existingEmail = await dbService.getUserByEmail(cleanEmail);
+      if (existingEmail) {
+        return res.status(400).json({ error: `Email address "${cleanEmail}" is already registered to user "${existingEmail.username}".` });
+      }
+    } else {
+      cleanEmail = `${username.toLowerCase().trim()}@resqcity.gov.lk`;
+    }
+
+    // Validate Phone if provided
+    let cleanPhone = (phone || '').trim();
+    if (cleanPhone) {
+      const phoneVal = validatePhone(cleanPhone);
+      if (!phoneVal.valid) {
+        return res.status(400).json({ error: phoneVal.error });
+      }
     }
 
     const existing = await dbService.getUserByUsername(username);
