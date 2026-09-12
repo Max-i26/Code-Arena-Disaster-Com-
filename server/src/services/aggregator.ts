@@ -34,26 +34,30 @@ export class HazardAggregatorService {
     const isNonWeatherHazard = ['FALLEN_TREE', 'LANDSLIDE', 'BLOCKED_DRAIN', 'DOWNED_POWERLINE'].includes(report.hazardType);
 
     let weightedConfidence = 0;
+    const numImg = Number(imgScore) || 0;
+    const numWeather = Number(weatherScore) || 0;
+    const numCluster = Number(clusterScore) || 0;
+    const numLoc = Number(locScore) || 0;
+    const numTrust = Number(context.userTrustScore) || 0.85;
+
     if (isNonWeatherHazard) {
-      // For physical localized hazards (e.g. fallen tree, landslide), visual proof and location AI carry primary weight:
-      // Image AI (45%), Location AI (25%), Reporter Trust (15%), Cluster (15%)
       weightedConfidence =
-        imgScore * 0.45 +
-        locScore * 0.25 +
-        context.userTrustScore * 0.15 +
-        clusterScore * 0.15;
+        numImg * 0.45 +
+        numLoc * 0.25 +
+        numTrust * 0.15 +
+        numCluster * 0.15;
     } else {
-      // For hydrological hazards (FLOOD):
-      // Image AI (35%), Weather Telemetry (25%), Cluster (15%), Location AI (15%), Reporter Trust (10%)
       weightedConfidence =
-        imgScore * 0.35 +
-        weatherScore * 0.25 +
-        clusterScore * 0.15 +
-        locScore * 0.15 +
-        context.userTrustScore * 0.10;
+        numImg * 0.35 +
+        numWeather * 0.25 +
+        numCluster * 0.15 +
+        numLoc * 0.15 +
+        numTrust * 0.10;
     }
 
-    const roundedConfidence = Math.round(weightedConfidence * 100) / 100;
+    const roundedConfidence = (Number.isNaN(weightedConfidence) || !Number.isFinite(weightedConfidence))
+      ? 0.08 
+      : Math.round(weightedConfidence * 100) / 100;
 
     let verdict: Verdict = 'NEEDS_VERIFICATION';
     const reasoningChain: string[] = [];

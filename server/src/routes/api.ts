@@ -418,3 +418,36 @@ apiRouter.get('/audit/export', (req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename=ResQCity_Audit_Logs.json');
   res.send(JSON.stringify(auditBundle, null, 2));
 });
+
+// 14. Shelter Supply Restock (Stage 06 Relief Desk)
+apiRouter.post('/shelters/:id/restock', (req, res) => {
+  const { id } = req.params;
+  const { foodPacks = 0, waterLitres = 0, medicalKits = 0, blankets = 0 } = req.body;
+
+  const shelter = store.getShelterById(id);
+  if (!shelter) {
+    return res.status(404).json({ error: 'Shelter not found' });
+  }
+
+  const updatedShelter = store.updateShelter(id, {
+    supplies: {
+      foodPacks: shelter.supplies.foodPacks + Number(foodPacks),
+      waterLitres: shelter.supplies.waterLitres + Number(waterLitres),
+      medicalKits: shelter.supplies.medicalKits + Number(medicalKits),
+      blankets: shelter.supplies.blankets + Number(blankets),
+    },
+  });
+
+  res.json({ success: true, shelter: updatedShelter });
+});
+
+// 15. Shelter Toggle Open/Closed
+apiRouter.post('/shelters/:id/toggle', (req, res) => {
+  const { id } = req.params;
+  const shelter = store.getShelterById(id);
+  if (!shelter) {
+    return res.status(404).json({ error: 'Shelter not found' });
+  }
+  const updated = store.updateShelter(id, { isOpen: !shelter.isOpen });
+  res.json({ success: true, shelter: updated });
+});
