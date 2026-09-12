@@ -111,8 +111,20 @@ authRouter.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
+    if (user.verificationStatus === 'PENDING') {
+      return res.status(403).json({
+        error: 'Access Pending Admin Approval: Your account registration is currently PENDING System Administrator verification and approval. Please wait for an Admin to activate your account.'
+      });
+    }
+
     if (user.verificationStatus === 'REJECTED') {
       return res.status(403).json({ error: 'Verification Rejected: Your official registration was not approved by the system administrator.' });
+    }
+
+    if (user.verificationStatus !== 'APPROVED') {
+      return res.status(403).json({
+        error: 'Account Not Activated: Your account requires System Administrator approval.'
+      });
     }
 
     // Generate token

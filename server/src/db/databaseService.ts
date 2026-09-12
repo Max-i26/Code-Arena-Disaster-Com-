@@ -178,8 +178,8 @@ class DatabaseService {
           \`created_at\` DATETIME NOT NULL,
           \`verification_status\` VARCHAR(32) DEFAULT 'APPROVED',
           \`nic_number\` VARCHAR(64),
-          \`nic_document_url\` TEXT,
-          \`official_details\` TEXT
+          \`nic_document_url\` LONGTEXT,
+          \`official_details\` LONGTEXT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
@@ -194,8 +194,8 @@ class DatabaseService {
           \`status\` VARCHAR(64),
           \`road_name\` VARCHAR(255),
           \`ward_id\` VARCHAR(64),
-          \`image_url\` TEXT,
-          \`description\` TEXT,
+          \`image_url\` LONGTEXT,
+          \`description\` LONGTEXT,
           \`road_closed\` BOOLEAN DEFAULT FALSE,
           \`urgency\` VARCHAR(32),
           \`confidence_score\` FLOAT
@@ -214,8 +214,8 @@ class DatabaseService {
           \`status\` VARCHAR(32),
           \`assigned_crew_id\` VARCHAR(128),
           \`assigned_crew_name\` VARCHAR(128),
-          \`resolution_photo_url\` TEXT,
-          \`resolution_notes\` TEXT
+          \`resolution_photo_url\` LONGTEXT,
+          \`resolution_notes\` LONGTEXT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
@@ -288,6 +288,18 @@ class DatabaseService {
           \`banned_at\` DATETIME
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+
+      // Schema Migration for existing databases: ensure image/large text columns are LONGTEXT
+      try {
+        await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `nic_document_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `official_details` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `image_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `description` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_photo_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_notes` LONGTEXT;');
+      } catch (alterErr: any) {
+        console.warn('[ResQCity SQL DB] Schema alter warning (ignorable if columns up to date):', alterErr.message);
+      }
 
       this.isConnectedToMysql = true;
       console.log('[ResQCity SQL DB] Successfully connected to MySQL Engine (localhost:3306 / resqcity_db)');
@@ -368,7 +380,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '199083740192V',
         officialDetails: 'CMC Command Division — Senior Officer ID #8841',
       },
@@ -396,7 +408,7 @@ class DatabaseService {
         wardId: 'ward-02',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '198883740991V',
         officialDetails: 'Rapid Pump Squad 01 (Water Pumping & Drainage)',
       },
@@ -411,7 +423,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '199583740221V',
         officialDetails: 'Viharamahadevi Park Primary Relief Center',
       },
