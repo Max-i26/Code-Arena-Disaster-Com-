@@ -498,3 +498,39 @@ apiRouter.delete('/shelters/:id', (req, res) => {
   }
   res.json({ success: true, id });
 });
+
+// 19. Add New Field Crew
+apiRouter.post('/crews', (req, res) => {
+  const { name, specialization, currentLocation, contactPhone, status } = req.body;
+  if (!name) {
+    return res.status(400).json({ error: 'Crew name is required' });
+  }
+  const crew = store.addFieldCrew({
+    name,
+    specialization: specialization || 'WATER_PUMPING',
+    currentLocation: currentLocation || { lat: 6.9271, lng: 79.8612 },
+    status: status || 'AVAILABLE',
+    contactPhone: contactPhone || '+94 77 000 0000',
+  });
+  res.json({ success: true, crew });
+});
+
+// 20. Update Field Crew
+apiRouter.put('/crews/:id', (req, res) => {
+  const { id } = req.params;
+  const updated = store.updateFieldCrew(id, req.body);
+  if (!updated) {
+    return res.status(404).json({ error: 'Field crew not found' });
+  }
+  res.json({ success: true, crew: updated });
+});
+
+// 21. Delete Field Crew
+apiRouter.delete('/crews/:id', (req, res) => {
+  const { id } = req.params;
+  const success = store.deleteFieldCrew(id);
+  if (!success) {
+    return res.status(404).json({ error: 'Field crew not found' });
+  }
+  res.json({ success: true, id });
+});

@@ -108,6 +108,28 @@ export const api = {
     });
   },
 
+  async addFieldCrew(payload: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/crews`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateFieldCrew(id: string, updates: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/crews/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+  },
+
+  async deleteFieldCrew(id: string): Promise<any> {
+    return safeFetchJson(`${API_BASE}/crews/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
   async submitCaseFeedback(caseId: string, action: string, notes: string): Promise<any> {
     return safeFetchJson(`${API_BASE}/cases/${caseId}/feedback`, {
       method: 'POST',

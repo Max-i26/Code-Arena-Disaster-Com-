@@ -2,8 +2,9 @@ import React, { useState, useCallback } from "react";
 import {
   Truck, MapPin, Camera, CheckCircle2, AlertTriangle, Navigation,
   Phone, ShieldCheck, Compass, ListChecks, ExternalLink, ImageOff, History,
+  Plus, Trash2, Edit3, Save, X, RefreshCw, Users,
 } from "lucide-react";
-import { AppState, CouncilTicket, HazardType } from "../types";
+import { AppState, CouncilTicket, HazardType, FieldCrew } from "../types";
 import { api } from "../services/api";
 
 // --- Equipment Manifest ---
@@ -343,32 +344,296 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
     }
   };
 
+  // Add Crew State
+  const [addCrewOpen, setAddCrewOpen] = useState(false);
+  const [newCrew, setNewCrew] = useState({
+    name: '',
+    specialization: 'WATER_PUMPING' as FieldCrew['specialization'],
+    wardId: state.wards[0]?.id || 'ward-01',
+    contactPhone: '+94 77 123 4567',
+  });
+  const [isCreatingCrew, setIsCreatingCrew] = useState(false);
+
+  // Edit Crew State
+  const [editingCrewId, setEditingCrewId] = useState<string | null>(null);
+  const [editCrewForm, setEditCrewForm] = useState({
+    name: '',
+    specialization: 'WATER_PUMPING' as FieldCrew['specialization'],
+    status: 'AVAILABLE' as FieldCrew['status'],
+    contactPhone: '',
+  });
+  const [isSavingCrewEdit, setIsSavingCrewEdit] = useState(false);
+
+  const handleCreateCrew = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCrew.name.trim()) {
+      alert('Response squad name is required');
+      return;
+    }
+    try {
+      setIsCreatingCrew(true);
+      const ward = state.wards.find(w => w.id === newCrew.wardId) || state.wards[0];
+      await api.addFieldCrew({
+        name: newCrew.name.trim(),
+        specialization: newCrew.specialization,
+        currentLocation: {
+          lat: ward ? ward.center[0] : 6.9271,
+          lng: ward ? ward.center[1] : 79.8612,
+        },
+        status: 'AVAILABLE',
+        contactPhone: newCrew.contactPhone,
+      });
+      alert(`New response squad "${newCrew.name}" registered successfully!`);
+      setAddCrewOpen(false);
+      setNewCrew({
+        name: '',
+        specialization: 'WATER_PUMPING',
+        wardId: state.wards[0]?.id || 'ward-01',
+        contactPhone: '+94 77 123 4567',
+      });
+      onRefresh();
+    } catch (err: any) {
+      alert(`Failed to register squad: ${err.message}`);
+    } finally {
+      setIsCreatingCrew(false);
+    }
+  };
+
+  const handleStartEditCrew = (crew: FieldCrew) => {
+    setEditingCrewId(crew.id);
+    setEditCrewForm({
+      name: crew.name,
+      specialization: crew.specialization,
+      status: crew.status,
+      contactPhone: crew.contactPhone,
+    });
+  };
+
+  const handleSaveEditCrew = async (id: string) => {
+    try {
+      setIsSavingCrewEdit(true);
+      await api.updateFieldCrew(id, editCrewForm);
+      alert('Response squad updated successfully!');
+      setEditingCrewId(null);
+      onRefresh();
+    } catch (err: any) {
+      alert(`Update failed: ${err.message}`);
+    } finally {
+      setIsSavingCrewEdit(false);
+    }
+  };
+
+  const handleDeleteCrew = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove squad "${name}"?`)) return;
+    try {
+      await api.deleteFieldCrew(id);
+      alert(`Squad "${name}" removed.`);
+      onRefresh();
+    } catch (err: any) {
+      alert(`Failed to delete squad: ${err.message}`);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center space-x-3">
-          <div className="p-2.5 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">
-            <Truck className="w-5 h-5" />
+      {/* Response Squad Registry & Management Section */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center space-x-2">
+            <Users className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Active Response Squads Registry ({state.fieldCrews.length} Units)
+            </h3>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-white">Field Operations &amp; Crew Response Portal</h2>
-            <p className="text-xs text-slate-400">Turn-by-turn safe detour routing and verified photographic closure.</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-2 text-xs">
-          <span className="text-slate-400">Active Unit:</span>
-          <select
-            value={selectedCrewId}
-            onChange={(e) => setSelectedCrewId(e.target.value)}
-            className="bg-slate-950 border border-slate-800 text-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500"
+          <button
+            type="button"
+            onClick={() => setAddCrewOpen(!addCrewOpen)}
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow"
           >
-            {state.fieldCrews.map((cr) => (
-              <option key={cr.id} value={cr.id}>
-                {cr.name} ({cr.status})
-              </option>
-            ))}
-          </select>
+            <Plus className="w-3.5 h-3.5" />
+            <span>{addCrewOpen ? 'Close Form' : '+ Register New Squad'}</span>
+          </button>
+        </div>
+
+        {addCrewOpen && (
+          <form onSubmit={handleCreateCrew} className="bg-slate-950 border border-emerald-800/80 p-4 rounded-xl space-y-3">
+            <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-1.5">
+              <Truck className="w-4 h-4" />
+              <span>Register Emergency Field Response Unit</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Squad / Unit Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Rapid Chainsaw Squad 03"
+                  value={newCrew.name}
+                  onChange={e => setNewCrew(c => ({ ...c, name: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Specialization *</label>
+                <select
+                  value={newCrew.specialization}
+                  onChange={e => setNewCrew(c => ({ ...c, specialization: e.target.value as any }))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  <option value="WATER_PUMPING">💧 WATER_PUMPING (Flood Pump Squad)</option>
+                  <option value="TREE_CLEARANCE">🌳 TREE_CLEARANCE (Chainsaw Unit)</option>
+                  <option value="RESCUE_BOAT">🚤 RESCUE_BOAT (Evacuation Squad)</option>
+                  <option value="ROAD_REPAIR">🚧 ROAD_REPAIR (Excavator / Debris Unit)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Station Base Ward</label>
+                <select
+                  value={newCrew.wardId}
+                  onChange={e => setNewCrew(c => ({ ...c, wardId: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
+                >
+                  {state.wards.map(w => (
+                    <option key={w.id} value={w.id}>{w.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] text-slate-400 block mb-1">Radio / Contact Phone</label>
+                <input
+                  type="text"
+                  value={newCrew.contactPhone}
+                  onChange={e => setNewCrew(c => ({ ...c, contactPhone: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setAddCrewOpen(false)}
+                className="px-3 py-1 rounded-lg border border-slate-700 text-slate-400 text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isCreatingCrew}
+                className="px-4 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5"
+              >
+                {isCreatingCrew ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                <span>{isCreatingCrew ? 'Saving…' : 'Register Unit'}</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Squad Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          {state.fieldCrews.map(cr => (
+            <div key={cr.id} className={`bg-slate-950 p-3 rounded-xl border transition space-y-2 ${selectedCrewId === cr.id ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/30' : 'border-slate-800'}`}>
+              <div className="flex items-start justify-between gap-1">
+                <div>
+                  <h4 className="font-bold text-white text-xs leading-snug">{cr.name}</h4>
+                  <p className="text-[10px] text-slate-400 font-mono">{cr.specialization}</p>
+                </div>
+                <div className="flex items-center space-x-1 shrink-0">
+                  <button
+                    type="button"
+                    title="Edit Squad"
+                    onClick={() => {
+                      if (editingCrewId === cr.id) {
+                        setEditingCrewId(null);
+                      } else {
+                        handleStartEditCrew(cr);
+                      }
+                    }}
+                    className={`p-1 rounded transition ${editingCrewId === cr.id ? 'bg-emerald-900 text-emerald-300' : 'hover:bg-slate-800 text-slate-400 hover:text-cyan-300'}`}
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Remove Squad"
+                    onClick={() => handleDeleteCrew(cr.id, cr.name)}
+                    className="p-1 rounded hover:bg-rose-950 text-slate-500 hover:text-rose-400 transition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {editingCrewId === cr.id ? (
+                <div className="bg-slate-900 p-2.5 rounded-lg border border-emerald-700/60 space-y-2 text-[10px]">
+                  <div className="flex items-center justify-between font-bold text-emerald-400">
+                    <span>✏️ Edit Squad Info</span>
+                    <button type="button" onClick={() => setEditingCrewId(null)} className="text-slate-500 hover:text-white">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-0.5 font-mono">Duty Status</label>
+                    <select
+                      value={editCrewForm.status}
+                      onChange={e => setEditCrewForm(f => ({ ...f, status: e.target.value as any }))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                    >
+                      <option value="AVAILABLE">🟢 AVAILABLE</option>
+                      <option value="DISPATCHED">🟡 DISPATCHED</option>
+                      <option value="ON_SITE">🔵 ON_SITE</option>
+                      <option value="MAINTENANCE">🔴 MAINTENANCE</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-0.5 font-mono">Specialization</label>
+                    <select
+                      value={editCrewForm.specialization}
+                      onChange={e => setEditCrewForm(f => ({ ...f, specialization: e.target.value as any }))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                    >
+                      <option value="WATER_PUMPING">💧 WATER_PUMPING</option>
+                      <option value="TREE_CLEARANCE">🌳 TREE_CLEARANCE</option>
+                      <option value="RESCUE_BOAT">🚤 RESCUE_BOAT</option>
+                      <option value="ROAD_REPAIR">🚧 ROAD_REPAIR</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-slate-400 block mb-0.5 font-mono">Radio Phone</label>
+                    <input
+                      type="text"
+                      value={editCrewForm.contactPhone}
+                      onChange={e => setEditCrewForm(f => ({ ...f, contactPhone: e.target.value }))}
+                      className="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-1 pt-1">
+                    <button type="button" onClick={() => setEditingCrewId(null)} className="px-2 py-1 rounded bg-slate-800 text-slate-400 text-[10px]">Cancel</button>
+                    <button
+                      type="button"
+                      disabled={isSavingCrewEdit}
+                      onClick={() => handleSaveEditCrew(cr.id)}
+                      className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] flex items-center space-x-1"
+                    >
+                      {isSavingCrewEdit ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                      <span>Save</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 pt-1 border-t border-slate-900">
+                  <span className={`px-1.5 py-0.5 rounded border ${cr.status === 'AVAILABLE' ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-amber-950 text-amber-300 border-amber-800'}`}>
+                    {cr.status}
+                  </span>
+                  <span>{cr.contactPhone}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 

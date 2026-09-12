@@ -204,14 +204,32 @@ class StateStore {
     return this.fieldCrews.find(c => c.id === id);
   }
 
+  public addFieldCrew(newCrew: Omit<FieldCrew, 'id'> & { id?: string }): FieldCrew {
+    const id = newCrew.id || `crew-${Date.now()}`;
+    const crew: FieldCrew = { ...newCrew, id };
+    this.fieldCrews.push(crew);
+    this.emit('FIELD_CREW_ADDED', crew);
+    return crew;
+  }
+
   public updateFieldCrew(id: string, updates: Partial<FieldCrew>): FieldCrew | undefined {
     const idx = this.fieldCrews.findIndex(c => c.id === id);
     if (idx >= 0) {
       this.fieldCrews[idx] = { ...this.fieldCrews[idx], ...updates };
-      this.emit('CREW_UPDATED', this.fieldCrews[idx]);
+      this.emit('FIELD_CREW_UPDATED', this.fieldCrews[idx]);
       return this.fieldCrews[idx];
     }
     return undefined;
+  }
+
+  public deleteFieldCrew(id: string): boolean {
+    const idx = this.fieldCrews.findIndex(c => c.id === id);
+    if (idx >= 0) {
+      const deleted = this.fieldCrews.splice(idx, 1)[0];
+      this.emit('FIELD_CREW_DELETED', deleted);
+      return true;
+    }
+    return false;
   }
 
   // Council Tickets
