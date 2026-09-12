@@ -595,7 +595,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'PENDING',
+        verificationStatus: 'APPROVED',
         nicNumber: '199083740192V',
         officialDetails: 'CMC Command Division — Senior Officer ID #8841',
       },
@@ -623,7 +623,7 @@ class DatabaseService {
         wardId: 'ward-02',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'PENDING',
+        verificationStatus: 'APPROVED',
         nicNumber: '198883740991V',
         officialDetails: 'Rapid Pump Squad 01 (Water Pumping & Drainage)',
       },
@@ -638,7 +638,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'PENDING',
+        verificationStatus: 'APPROVED',
         nicNumber: '199583740221V',
         officialDetails: 'Viharamahadevi Park Primary Relief Center',
       },
@@ -769,9 +769,10 @@ class DatabaseService {
     const cleanUsername = user.username.toLowerCase().trim();
     user.username = cleanUsername;
     
-    // All registrations require Admin approval except System Admins
+    // All registrations require Admin approval except Citizens and System Admins
     if (user.verificationStatus === undefined) {
-      user.verificationStatus = (user.role === 'SYSTEM_ADMIN') ? 'APPROVED' : 'PENDING';
+      const isOfficialRole = user.role === 'COUNCIL_OFFICER' || user.role === 'FIELD_CREW' || user.role === 'RELIEF_DESK';
+      user.verificationStatus = isOfficialRole ? 'PENDING' : 'APPROVED';
     }
 
     if (this.isConnectedToMysql && this.pool) {
@@ -859,14 +860,14 @@ class DatabaseService {
   public async updateUserVerification(userId: string, status: 'APPROVED' | 'REJECTED'): Promise<boolean> {
     if (this.isConnectedToMysql && this.pool) {
       try {
-        await this.pool.query('UPDATE `users` SET `verification_status` = ? WHERE `id` = ?', [status, userId]);
+        await this.pool.query('UPDATE `users` SET `verification_status` = ? WHERE `id` = ? OR `username` = ?', [status, userId, userId]);
       } catch (err) {
         console.error('MySQL query error:', err);
       }
     }
 
     for (const u of this.tables.users.values()) {
-      if (u.id === userId) {
+      if (u.id === userId || u.username.toLowerCase() === userId.toLowerCase()) {
         u.verificationStatus = status;
         this.saveEmbeddedSqlStore();
         return true;
