@@ -259,6 +259,7 @@ export function App() {
                 <CitizenApp
                   state={state}
                   onRefresh={fetchState}
+                  currentUser={currentUser}
                   onSelectCase={(c) => setSelectedCaseForModal(c)}
                 />
               )}

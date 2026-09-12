@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { 
   CitizenReport, 
   HazardCase, 
@@ -10,6 +12,8 @@ import {
   AiTuningLog 
 } from '../types';
 import { WARDS, SENSORS, SHELTERS, FIELD_CREWS, INITIAL_CASES, INITIAL_CONFIG, WardDefinition } from './mockData';
+
+const PERSISTENT_FILE_PATH = path.join(__dirname, 'persistent_store.json');
 
 class StateStore {
   private wards: WardDefinition[] = [...WARDS];
@@ -72,6 +76,118 @@ class StateStore {
   private bannedUsers: Set<string> = new Set();
   private subscribers: ((event: { type: string; payload: any }) => void)[] = [];
 
+  constructor() {
+    this.loadPersistentState();
+  }
+
+  private loadPersistentState() {
+    try {
+      if (fs.existsSync(PERSISTENT_FILE_PATH)) {
+        const raw = fs.readFileSync(PERSISTENT_FILE_PATH, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.cases)) this.cases = data.cases;
+        if (Array.isArray(data.reports)) this.reports = data.reports;
+        if (Array.isArray(data.shelters)) this.shelters = data.shelters;
+        if (Array.isArray(data.fieldCrews)) this.fieldCrews = data.fieldCrews;
+        if (Array.isArray(data.tickets)) this.tickets = data.tickets;
+        if (Array.isArray(data.reliefRequests)) this.reliefRequests = data.reliefRequests;
+        if (data.config) this.config = { ...INITIAL_CONFIG, ...data.config };
+        if (Array.isArray(data.aiTuningLogs)) this.aiTuningLogs = data.aiTuningLogs;
+        if (Array.isArray(data.bannedUsers)) this.bannedUsers = new Set(data.bannedUsers);
+        console.log('[ResQCity Store] Successfully loaded persistent store state from disk.');
+      }
+    } catch (err: any) {
+      console.warn('[ResQCity Store] Could not load persistent state, using default seed:', err.message);
+    }
+  }
+
+  public savePersistentState() {
+    try {
+      const payload = {
+        cases: this.cases,
+        reports: this.reports,
+        shelters: this.shelters,
+        fieldCrews: this.fieldCrews,
+        tickets: this.tickets,
+        reliefRequests: this.reliefRequests,
+        config: this.config,
+        aiTuningLogs: this.aiTuningLogs,
+        bannedUsers: Array.from(this.bannedUsers),
+      };
+      fs.writeFileSync(PERSISTENT_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+    } catch (err: any) {
+      console.error('[ResQCity Store] Error saving persistent state:', err.message);
+    }
+  }
+
+  public resetToInitialSeed() {
+    this.wards = [...WARDS];
+    this.sensors = JSON.parse(JSON.stringify(SENSORS));
+    this.shelters = JSON.parse(JSON.stringify(SHELTERS));
+    this.fieldCrews = JSON.parse(JSON.stringify(FIELD_CREWS));
+    this.cases = JSON.parse(JSON.stringify(INITIAL_CASES));
+    this.reports = [];
+    this.tickets = [
+      {
+        id: 'ticket-01',
+        caseId: 'case-01',
+        createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+        wardId: 'ward-02',
+        hazardType: 'FLOOD',
+        urgency: 'CRITICAL',
+        status: 'DISPATCHED',
+        assignedCrewId: 'crew-03',
+        assignedCrewName: 'Navy Disaster Rescue Boat Squad A',
+        detourRoute: [
+          { lat: 6.9500, lng: 79.8800, instruction: 'Take Grandpass North Expressway' },
+          { lat: 6.9650, lng: 79.8880, instruction: 'Bypass Kelani Bridge via Kandy Road Overpass' },
+        ],
+      },
+      {
+        id: 'ticket-02',
+        caseId: 'case-02',
+        createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
+        wardId: 'ward-01',
+        hazardType: 'FALLEN_TREE',
+        urgency: 'HIGH',
+        status: 'OPEN',
+        assignedCrewId: undefined,
+      },
+    ];
+    this.reliefRequests = [
+      {
+        id: 'relief-req-01',
+        caseId: 'case-01',
+        reportId: 'rep-init-01',
+        citizenName: 'Sunil Perera',
+        citizenPhone: '+94 77 987 6543',
+        householdCount: 4,
+        specialNeeds: ['Elderly grandmother with mobility restriction', 'Drinking water shortage'],
+        location: {
+          lat: 6.9580,
+          lng: 79.8910,
+          roadName: 'Kelani River View Lane',
+          roadHierarchy: 'LOCAL_STREET',
+          wardId: 'ward-02',
+          wardName: 'Kelani River Basin',
+        },
+        urgency: 'HIGH',
+        status: 'QUEUED',
+        createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      },
+    ];
+    this.config = { ...INITIAL_CONFIG };
+    this.aiTuningLogs = [];
+    this.bannedUsers = new Set();
+
+    if (fs.existsSync(PERSISTENT_FILE_PATH)) {
+      try {
+        fs.unlinkSync(PERSISTENT_FILE_PATH);
+      } catch (e) { }
+    }
+    this.emit('STATE_RESET', { message: 'State store reset to initial seed data.' });
+  }
+
   // Broadcast to WebSockets / SSE
   public subscribe(callback: (event: { type: string; payload: any }) => void) {
     this.subscribers.push(callback);
@@ -81,6 +197,7 @@ class StateStore {
   }
 
   public emit(type: string, payload: any) {
+    this.savePersistentState();
     this.subscribers.forEach(cb => {
       try {
         cb({ type, payload });

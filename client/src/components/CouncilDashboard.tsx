@@ -14,6 +14,8 @@ import {
   Sparkles,
   Cpu,
   Trash2,
+  User,
+  Phone,
   Image as ImageIcon,
 } from 'lucide-react';
 import { AppState, HazardCase, CouncilTicket } from '../types';
@@ -148,6 +150,32 @@ const CaseCard: React.FC<CaseCardProps> = ({ c, onSelectCase, onRefresh }) => {
               {c.description || 'Hazard reported on road segment.'}
             </p>
           </div>
+        </div>
+
+        {/* Submitter / Reporter Identification Banner */}
+        <div className="flex flex-wrap items-center justify-between text-xs bg-slate-900/90 p-3 rounded-xl border border-slate-800 text-slate-300 gap-2.5">
+          <div className="flex items-center space-x-2">
+            <User className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>
+              <span className="text-slate-400">Reported By:</span>{' '}
+              <strong className="text-white font-bold">
+                {c.reporterName || (c.source === 'SENSOR_AUTO' ? 'Automated IoT Sensor Station' : 'Registered Citizen Submitter')}
+              </strong>
+            </span>
+          </div>
+
+          {(c.reporterPhone || c.source === 'CITIZEN') && (
+            <div className="flex items-center space-x-1.5 font-mono text-cyan-300 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+              <Phone className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>{c.reporterPhone || 'Verified Account Phone'}</span>
+            </div>
+          )}
+
+          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded border ${
+            c.source === 'CITIZEN' ? 'bg-cyan-950/80 text-cyan-300 border-cyan-800' : 'bg-purple-950/80 text-purple-300 border-purple-800'
+          }`}>
+            {c.source === 'CITIZEN' ? '👤 CITIZEN SUBMISSION' : '🤖 IOT SENSOR'}
+          </span>
         </div>
 
         {/* Location info bar */}
@@ -462,31 +490,48 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                 No open work orders pending dispatch.
               </div>
             ) : (
-              openTickets.map((t) => (
-                <div key={t.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-bold text-white">{t.id}</span>
-                    <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase ${
-                      t.status === 'DISPATCHED'
-                        ? 'bg-amber-950 text-amber-300 border border-amber-700'
-                        : 'bg-rose-950 text-rose-300 border border-rose-700'
-                    }`}>
-                      {t.status}
-                    </span>
-                  </div>
-
-                  <div className="text-sm space-y-1">
-                    <div className="text-slate-300">Hazard: <span className="font-bold text-amber-300 text-base">{t.hazardType.replace(/_/g, ' ')}</span></div>
-                    <div className="text-slate-400 text-xs font-mono">
-                      Ward: <span className="text-white font-semibold">{t.wardId}</span> · Urgency:{' '}
-                      <span className={
-                        t.urgency === 'CRITICAL' ? 'text-rose-400 font-bold' :
-                        t.urgency === 'HIGH' ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'
-                      }>
-                        {t.urgency}
+              openTickets.map((t) => {
+                const matchingCase = state.cases.find((c) => c.id === t.caseId);
+                return (
+                  <div key={t.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-sm font-bold text-white">{t.id}</span>
+                      <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase ${
+                        t.status === 'DISPATCHED'
+                          ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                          : 'bg-rose-950 text-rose-300 border border-rose-700'
+                      }`}>
+                        {t.status}
                       </span>
                     </div>
-                  </div>
+
+                    <div className="text-sm space-y-1">
+                      <div className="text-slate-300">Hazard: <span className="font-bold text-amber-300 text-base">{t.hazardType.replace(/_/g, ' ')}</span></div>
+                      <div className="text-slate-400 text-xs font-mono">
+                        Ward: <span className="text-white font-semibold">{t.wardId}</span> · Urgency:{' '}
+                        <span className={
+                          t.urgency === 'CRITICAL' ? 'text-rose-400 font-bold' :
+                          t.urgency === 'HIGH' ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'
+                        }>
+                          {t.urgency}
+                        </span>
+                      </div>
+                    </div>
+
+                    {matchingCase && (
+                      <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                        <div className="flex items-center space-x-1.5 truncate">
+                          <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          <span className="truncate">Reported By: <strong className="text-white">{matchingCase.reporterName || (matchingCase.source === 'SENSOR_AUTO' ? 'Automated IoT Sensor Station' : 'Registered Citizen Submitter')}</strong></span>
+                        </div>
+                        {(matchingCase.reporterPhone || matchingCase.source === 'CITIZEN') && (
+                          <div className="flex items-center space-x-1 font-mono text-cyan-300 shrink-0 ml-2">
+                            <Phone className="w-3.5 h-3.5 text-cyan-400" />
+                            <span>{matchingCase.reporterPhone || 'Verified Account Phone'}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                   {t.assignedCrewName ? (
                     <div className="bg-emerald-950/60 border border-emerald-700/60 p-3.5 rounded-xl text-sm space-y-2.5">
@@ -554,8 +599,9 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                     </div>
                   )}
                 </div>
-              ))
-            )}
+              );
+            })
+              )}
           </div>
         </div>
       </div>

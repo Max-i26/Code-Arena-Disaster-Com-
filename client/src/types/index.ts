@@ -87,6 +87,9 @@ export interface HazardCase {
   roadClosed: boolean;
   broadcastSent: boolean;
   ticketId?: string;
+  reporterName?: string;
+  reporterPhone?: string;
+  reporterUserId?: string;
   nearbyVerifications: {
     userId: string;
     confirmed: boolean;

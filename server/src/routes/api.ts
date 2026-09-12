@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import { store } from '../db/store';
+import { dbService as db } from '../db/databaseService';
 import { caseBuilder } from '../services/caseBuilder';
 import { runImageCheck } from '../services/checks/imageCheck';
 import { runWeatherCheck } from '../services/checks/weatherCheck';
@@ -43,8 +44,8 @@ apiRouter.get('/state', (req, res) => {
 apiRouter.post('/reports', async (req, res) => {
   try {
     const {
-      userId = 'citizen-' + Math.floor(Math.random() * 1000),
-      userName = 'Citizen User',
+      userId,
+      userName: inputUserName,
       hazardType,
       severity = 'HIGH',
       lat,
@@ -55,11 +56,39 @@ apiRouter.post('/reports', async (req, res) => {
       needsRescue = false,
       householdCount = 1,
       specialNeeds = [],
-      contactPhone = '',
+      contactPhone: inputContactPhone = '',
     } = req.body;
 
+    let finalUserId = userId || 'citizen-' + Math.floor(Math.random() * 1000);
+    let finalUserName = (inputUserName && inputUserName.trim()) ? inputUserName.trim() : 'Citizen User';
+    let finalPhone = (inputContactPhone && inputContactPhone.trim()) ? inputContactPhone.trim() : '';
+    let userTrustScore = 0.85;
+
+    // Look up real user details from database if userId or username is provided
+    if (userId) {
+      const dbUser = (await db.getUserById(userId)) || (await db.getUserByUsername(userId));
+      if (dbUser) {
+        finalUserId = dbUser.id;
+        // Fallback to dbUser profile name/phone only if citizen left form inputs blank
+        if (!inputUserName || !inputUserName.trim() || inputUserName === 'Citizen User') {
+          finalUserName = dbUser.fullName || dbUser.username;
+        }
+        if (!finalPhone) {
+          finalPhone = dbUser.phone || '';
+        }
+        userTrustScore = dbUser.trustScore ?? 0.85;
+      }
+    } else if (inputUserName) {
+      const dbUser = await db.getUserByUsername(inputUserName);
+      if (dbUser) {
+        finalUserId = dbUser.id;
+        if (!finalPhone) finalPhone = dbUser.phone || '';
+        userTrustScore = dbUser.trustScore ?? 0.85;
+      }
+    }
+
     // Check banned user
-    if (store.isUserBanned(userId)) {
+    if (store.isUserBanned(finalUserId)) {
       return res.status(403).json({ error: 'User is banned from reporting due to false submission history.' });
     }
 
@@ -69,9 +98,9 @@ apiRouter.post('/reports', async (req, res) => {
     const report: CitizenReport = {
       id: `rep-${Date.now()}`,
       createdAt: new Date().toISOString(),
-      userId,
-      userName,
-      userTrustScore: 0.85,
+      userId: finalUserId,
+      userName: finalUserName,
+      userTrustScore,
       hazardType,
       severity,
       location: resolvedLocation,
@@ -80,7 +109,7 @@ apiRouter.post('/reports', async (req, res) => {
       needsRescue: Boolean(needsRescue),
       householdCount: Number(householdCount) || 1,
       specialNeeds,
-      contactPhone,
+      contactPhone: finalPhone,
       status: 'PROCESSED',
     };
 
@@ -124,6 +153,9 @@ apiRouter.post('/reports', async (req, res) => {
       location: report.location,
       imageUrl: report.imageUrl,
       description: report.description,
+      reporterName: report.userName,
+      reporterPhone: report.contactPhone,
+      reporterUserId: report.userId,
       roadClosed: false,
       broadcastSent: false,
       verdictData: verdict,
@@ -293,16 +325,34 @@ apiRouter.post('/tickets/:id/resolve', (req, res) => {
 });
 
 // 6. Relief Match Request & Direct Emergency Rescue Submission
-apiRouter.post('/relief/request', (req, res) => {
+apiRouter.post('/relief/request', async (req, res) => {
   const {
-    citizenName = 'Emergency Citizen',
-    citizenPhone = '+94 77 000 0000',
+    userId,
+    citizenName: inputCitizenName,
+    citizenPhone: inputCitizenPhone,
     householdCount = 1,
     specialNeeds = [],
     roadName = 'Baseline Road',
     lat,
     lng,
   } = req.body;
+
+  let finalCitizenName = inputCitizenName || 'Emergency Citizen';
+  let finalCitizenPhone = inputCitizenPhone || '+94 77 000 0000';
+
+  if (userId) {
+    const dbUser = (await db.getUserById(userId)) || (await db.getUserByUsername(userId));
+    if (dbUser) {
+      finalCitizenName = dbUser.fullName;
+      if (dbUser.phone) finalCitizenPhone = dbUser.phone;
+    }
+  } else if (inputCitizenName) {
+    const dbUser = await db.getUserByUsername(inputCitizenName);
+    if (dbUser) {
+      finalCitizenName = dbUser.fullName;
+      if (dbUser.phone) finalCitizenPhone = dbUser.phone;
+    }
+  }
 
   const resolvedLocation = caseBuilder.resolveLocation(
     lat !== undefined ? Number(lat) : 6.9344,
@@ -314,8 +364,8 @@ apiRouter.post('/relief/request', (req, res) => {
     id: `relief-${Date.now()}`,
     caseId: `direct-rescue-${Date.now()}`,
     reportId: `rep-rescue-${Date.now()}`,
-    citizenName,
-    citizenPhone,
+    citizenName: finalCitizenName,
+    citizenPhone: finalCitizenPhone,
     householdCount: Number(householdCount) || 1,
     specialNeeds: Array.isArray(specialNeeds) ? specialNeeds : [],
     location: resolvedLocation,

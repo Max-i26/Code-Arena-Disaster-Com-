@@ -124,6 +124,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         });
 
         if (res.success) {
+          alert(`You are registered successfully! Your ${res.user?.role ? res.user.role.replace('_', ' ') : 'Citizen'} account details have been stored in the database.`);
           if (res.user?.verificationStatus === 'PENDING') {
             setPendingNotice('Registration Submitted Successfully! Your official account is currently PENDING Admin verification. A System Administrator will review your NIC card and credentials before portal access is activated.');
           } else {
@@ -372,9 +373,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                     <div>
                       <label className="text-slate-300 block mb-1.5 font-semibold text-xs">Upload NIC Document / Photo Proof *</label>
-                      <label className="flex items-center justify-center space-x-2 bg-slate-900 hover:bg-slate-850 border border-dashed border-amber-500/60 hover:border-amber-400 text-amber-300 font-bold px-3 py-2.5 rounded-xl cursor-pointer transition text-xs">
-                        <Upload className="w-4 h-4 text-amber-400" />
-                        <span>{isUploadingNicDoc ? 'Processing File...' : 'Upload NIC Image File or Take Photo'}</span>
+                      <label className={`flex items-center justify-center space-x-2 border border-dashed font-bold px-3 py-2.5 rounded-xl cursor-pointer transition text-xs ${
+                        nicDocumentUrl
+                          ? 'bg-emerald-950/60 hover:bg-emerald-900/60 border-emerald-500 text-emerald-300'
+                          : 'bg-slate-900 hover:bg-slate-850 border-amber-500/60 hover:border-amber-400 text-amber-300'
+                      }`}>
+                        {nicDocumentUrl ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        ) : (
+                          <Upload className="w-4 h-4 text-amber-400 shrink-0" />
+                        )}
+                        <span>
+                          {isUploadingNicDoc
+                            ? 'Processing File...'
+                            : nicDocumentUrl
+                            ? '✓ NIC Proof Attached (Click to Change)'
+                            : 'Upload NIC Image File or Take Photo'}
+                        </span>
                         <input
                           type="file"
                           accept="image/*"
@@ -383,8 +398,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         />
                       </label>
                       {nicDocumentUrl && (
-                        <div className="mt-2 rounded-xl overflow-hidden border border-slate-700 h-24 bg-slate-900 flex items-center justify-center">
+                        <div className="mt-2 rounded-xl overflow-hidden border border-emerald-800/60 h-24 bg-slate-900 flex items-center justify-center relative group">
                           <img src={nicDocumentUrl} alt="NIC Proof" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] text-emerald-300 bg-slate-900/90 px-2 py-1 rounded border border-emerald-500/50 font-bold">NIC Document Attached</span>
+                          </div>
                         </div>
                       )}
                     </div>

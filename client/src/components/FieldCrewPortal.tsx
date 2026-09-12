@@ -778,7 +778,11 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
                       Proof Photo Upload (File or Camera)
                     </label>
 
-                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/40 rounded-2xl p-5 cursor-pointer transition shadow-inner group">
+                    <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-5 cursor-pointer transition shadow-inner group ${
+                      resolutionPhotoUrl
+                        ? 'border-emerald-500/80 bg-emerald-950/40 hover:bg-emerald-950/60'
+                        : 'border-emerald-500/50 hover:border-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/40'
+                    }`}>
                       <input
                         type="file"
                         accept="image/*"
@@ -788,10 +792,18 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
                       <div className="flex items-center space-x-2.5 text-emerald-400 font-extrabold text-sm mb-1 group-hover:scale-105 transition-transform">
                         {isUploadingPhoto ? (
                           <RefreshCw className="w-5 h-5 animate-spin text-emerald-400" />
+                        ) : resolutionPhotoUrl ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                         ) : (
                           <Upload className="w-5 h-5 text-emerald-400" />
                         )}
-                        <span>{isUploadingPhoto ? "Processing Photo File..." : "Click to Upload Photo or Take Picture"}</span>
+                        <span>
+                          {isUploadingPhoto
+                            ? "Processing Photo File..."
+                            : resolutionPhotoUrl
+                            ? "✓ Proof Photo Attached (Click to Change)"
+                            : "Click to Upload Photo or Take Picture"}
+                        </span>
                       </div>
                       <p className="text-xs text-slate-400 font-mono text-center">Upload field photo directly from camera or device gallery</p>
                     </label>

@@ -102,7 +102,8 @@ authRouter.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Username and password are required.' });
     }
 
-    const user = await dbService.getUserByUsername(username);
+    const cleanUsername = (username || '').toLowerCase().trim();
+    const user = await dbService.getUserByUsername(cleanUsername);
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password.' });
     }

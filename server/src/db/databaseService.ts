@@ -1,5 +1,7 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
 import { UserRole } from '../types';
 
 export interface DbUser {
@@ -19,6 +21,8 @@ export interface DbUser {
   officialDetails?: string;
 }
 
+const PERSISTENT_USERS_FILE = path.join(__dirname, 'persistent_users.json');
+
 class DatabaseService {
   private pool: mysql.Pool | null = null;
   private isConnectedToMysql = false;
@@ -27,7 +31,46 @@ class DatabaseService {
   private fallbackUsers: Map<string, DbUser> = new Map();
 
   constructor() {
+    this.loadPersistentUsers();
     this.initDatabase();
+  }
+
+  private loadPersistentUsers() {
+    try {
+      if (fs.existsSync(PERSISTENT_USERS_FILE)) {
+        const raw = fs.readFileSync(PERSISTENT_USERS_FILE, 'utf-8');
+        const list: DbUser[] = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          for (const u of list) {
+            if (u && u.username) {
+              this.fallbackUsers.set(u.username.toLowerCase().trim(), u);
+            }
+          }
+          console.log(`[ResQCity DB] Loaded ${list.length} persistent user accounts from disk.`);
+        }
+      }
+    } catch (err: any) {
+      console.warn('[ResQCity DB] Error loading persistent users file:', err.message);
+    }
+  }
+
+  private savePersistentUsers() {
+    try {
+      const list = Array.from(this.fallbackUsers.values());
+      fs.writeFileSync(PERSISTENT_USERS_FILE, JSON.stringify(list, null, 2), 'utf-8');
+    } catch (err: any) {
+      console.error('[ResQCity DB] Error saving persistent users to disk:', err.message);
+    }
+  }
+
+  private toMysqlDatetime(isoOrDate?: string | Date): string {
+    try {
+      const d = isoOrDate ? new Date(isoOrDate) : new Date();
+      if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+      return d.toISOString().slice(0, 19).replace('T', ' ');
+    } catch (e) {
+      return new Date().toISOString().slice(0, 19).replace('T', ' ');
+    }
   }
 
   public async initDatabase() {
@@ -76,8 +119,94 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
+      // Create cases table schema
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`cases\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`report_id\` VARCHAR(128),
+          \`source\` VARCHAR(64),
+          \`created_at\` DATETIME,
+          \`hazard_type\` VARCHAR(64),
+          \`status\` VARCHAR(64),
+          \`road_name\` VARCHAR(255),
+          \`ward_id\` VARCHAR(64),
+          \`image_url\` TEXT,
+          \`description\` TEXT,
+          \`road_closed\` BOOLEAN DEFAULT FALSE,
+          \`urgency\` VARCHAR(32),
+          \`confidence_score\` FLOAT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Create tickets table schema
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`tickets\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`case_id\` VARCHAR(128),
+          \`created_at\` DATETIME,
+          \`ward_id\` VARCHAR(64),
+          \`hazard_type\` VARCHAR(64),
+          \`urgency\` VARCHAR(32),
+          \`status\` VARCHAR(32),
+          \`assigned_crew_id\` VARCHAR(128),
+          \`assigned_crew_name\` VARCHAR(128),
+          \`resolution_photo_url\` TEXT,
+          \`resolution_notes\` TEXT
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Create shelters table schema
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`shelters\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`name\` VARCHAR(128),
+          \`ward_id\` VARCHAR(64),
+          \`total_capacity\` INT,
+          \`occupied\` INT,
+          \`contact_phone\` VARCHAR(64)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Create field_crews table schema
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`field_crews\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`name\` VARCHAR(128),
+          \`ward_id\` VARCHAR(64),
+          \`specialization\` VARCHAR(64),
+          \`status\` VARCHAR(64),
+          \`contact_phone\` VARCHAR(64)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
       this.isConnectedToMysql = true;
       console.log('[ResQCity DB] Successfully connected to XAMPP MySQL (localhost:3306 / resqcity_db)');
+
+      // Sync disk users to MySQL
+      for (const u of this.fallbackUsers.values()) {
+        try {
+          await this.pool.query(
+            `INSERT IGNORE INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`, \`verification_status\`, \`nic_number\`, \`nic_document_url\`, \`official_details\`)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              u.id,
+              u.username,
+              u.passwordHash,
+              u.fullName,
+              u.email,
+              u.role,
+              u.phone || '',
+              u.wardId || 'ward-01',
+              u.trustScore || 0.85,
+              this.toMysqlDatetime(u.createdAt),
+              u.verificationStatus || 'APPROVED',
+              u.nicNumber || '',
+              u.nicDocumentUrl || '',
+              u.officialDetails || '',
+            ]
+          );
+        } catch (e) { }
+      }
     } catch (err: any) {
       console.warn('[ResQCity DB] XAMPP MySQL offline or unavailable. Falling back to persistent store. Error:', err.message);
       this.isConnectedToMysql = false;
@@ -175,9 +304,10 @@ class DatabaseService {
   }
 
   public async getUserByUsername(username: string): Promise<DbUser | null> {
+    const cleanUsername = username.toLowerCase().trim();
     if (this.isConnectedToMysql && this.pool) {
       try {
-        const [rows]: any = await this.pool.query('SELECT * FROM `users` WHERE `username` = ?', [username.toLowerCase().trim()]);
+        const [rows]: any = await this.pool.query('SELECT * FROM `users` WHERE `username` = ?', [cleanUsername]);
         if (rows && rows.length > 0) {
           const r = rows[0];
           return {
@@ -197,14 +327,13 @@ class DatabaseService {
             officialDetails: r.official_details,
           };
         }
-        return null;
       } catch (err) {
         console.error('MySQL query error:', err);
       }
     }
 
-    // Fallback
-    const u = this.fallbackUsers.get(username.toLowerCase().trim());
+    // Fallback disk memory store
+    const u = this.fallbackUsers.get(cleanUsername);
     return u || null;
   }
 
@@ -231,13 +360,12 @@ class DatabaseService {
             officialDetails: r.official_details,
           };
         }
-        return null;
       } catch (err) {
         console.error('MySQL query error:', err);
       }
     }
 
-    // Fallback
+    // Fallback disk memory store
     for (const u of this.fallbackUsers.values()) {
       if (u.id === id) return u;
     }
@@ -264,19 +392,21 @@ class DatabaseService {
             user.phone || '',
             user.wardId || 'ward-01',
             user.trustScore || 0.85,
-            user.createdAt,
+            this.toMysqlDatetime(user.createdAt),
             user.verificationStatus,
             user.nicNumber || '',
             user.nicDocumentUrl || '',
             user.officialDetails || '',
           ]
         );
+        console.log(`[ResQCity DB] Successfully inserted user "${user.username}" into MySQL database (resqcity_db.users)`);
       } catch (err: any) {
-        console.error('Failed to create user in MySQL:', err.message);
+        console.error('[ResQCity DB] Failed to insert user into MySQL:', err.message);
       }
     }
 
     this.fallbackUsers.set(cleanUsername, user);
+    this.savePersistentUsers();
     return user;
   }
 
@@ -298,7 +428,7 @@ class DatabaseService {
               wardId: r.ward_id,
               trustScore: r.trust_score,
               createdAt: r.created_at,
-              verificationStatus: r.verification_status,
+              verificationStatus: r.verification_status || 'PENDING',
               nicNumber: r.nic_number,
               nicDocumentUrl: r.nic_document_url,
               officialDetails: r.official_details,
@@ -307,11 +437,11 @@ class DatabaseService {
           return pendingUsers;
         }
       } catch (err) {
-        console.error('MySQL pending query error:', err);
+        console.error('MySQL query error:', err);
       }
     }
 
-    // Fallback memory query
+    // Fallback disk memory store
     for (const u of this.fallbackUsers.values()) {
       if (u.verificationStatus === 'PENDING') {
         pendingUsers.push(u);
@@ -325,14 +455,15 @@ class DatabaseService {
       try {
         await this.pool.query('UPDATE `users` SET `verification_status` = ? WHERE `id` = ?', [status, userId]);
       } catch (err) {
-        console.error('MySQL verification update error:', err);
+        console.error('MySQL query error:', err);
       }
     }
 
-    // Fallback memory update
+    // Fallback memory update & disk sync
     for (const u of this.fallbackUsers.values()) {
       if (u.id === userId) {
         u.verificationStatus = status;
+        this.savePersistentUsers();
         return true;
       }
     }
@@ -344,6 +475,7 @@ class DatabaseService {
       connectedToMysql: this.isConnectedToMysql,
       host: 'localhost:3306',
       database: 'resqcity_db',
+      persistentUserCount: this.fallbackUsers.size,
     };
   }
 }

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "usr-citizen-1789209310493",
+    "username": "resqsanke",
+    "passwordHash": "$2b$10$1enaDGPo6v5Po7tw1.PGGOzavNepPDgejkc20asVu901Kut.BdbiW",
+    "fullName": "Sankajith Jinasena",
+    "email": "ResQsanke@resqcity.lk",
+    "role": "CITIZEN",
+    "phone": "+94 77 123 4567",
+    "wardId": "ward-01",
+    "trustScore": 0.85,
+    "createdAt": "2026-09-12T10:35:10.493Z",
+    "verificationStatus": "APPROVED",
+    "nicNumber": "199483720191V",
+    "nicDocumentUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+    "officialDetails": "CITIZEN Registered Personnel"
+  }
+]

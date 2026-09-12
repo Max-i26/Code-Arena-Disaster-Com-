@@ -19,12 +19,14 @@ import { api } from '../services/api';
 interface CitizenAppProps {
   state: AppState;
   onRefresh: () => void;
-  onSelectCase: (c: HazardCase) => void;
+  currentUser?: any;
+  onSelectCase?: (c: HazardCase) => void;
 }
 
 export const CitizenApp: React.FC<CitizenAppProps> = ({
   state,
   onRefresh,
+  currentUser,
   onSelectCase,
 }) => {
   const [activeTab, setActiveTab] = useState<'REPORT' | 'RESCUE' | 'COMMUNITY_VERIFY'>('REPORT');
@@ -32,14 +34,14 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
   // Hazard Report Form State
   const [hazardType, setHazardType] = useState<HazardType>('FLOOD');
   const [severity, setSeverity] = useState<SeverityLevel>('HIGH');
-  const [selectedWardId, setSelectedWardId] = useState(state.wards[0]?.id || 'ward-01');
+  const [selectedWardId, setSelectedWardId] = useState(currentUser?.wardId || state.wards[0]?.id || 'ward-01');
   const [roadName, setRoadName] = useState('Baseline Road (A1)');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80');
   const [needsRescue, setNeedsRescue] = useState(false);
   const [householdCount, setHouseholdCount] = useState(1);
-  const [userName, setUserName] = useState('Kasun Jayawardena');
-  const [contactPhone, setContactPhone] = useState('+94 77 345 6789');
+  const [userName, setUserName] = useState(currentUser?.fullName || '');
+  const [contactPhone, setContactPhone] = useState(currentUser?.phone || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [isDetectingGps, setIsDetectingGps] = useState(false);
@@ -49,15 +51,32 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
   const [submittedResult, setSubmittedResult] = useState<any>(null);
 
   // Direct Rescue Request Form State
-  const [rescueName, setRescueName] = useState('Kasun Jayawardena');
-  const [rescuePhone, setRescuePhone] = useState('+94 77 345 6789');
+  const [rescueName, setRescueName] = useState(currentUser?.fullName || '');
+  const [rescuePhone, setRescuePhone] = useState(currentUser?.phone || '');
   const [rescueCount, setRescueCount] = useState(2);
-  const [rescueWardId, setRescueWardId] = useState(state.wards[0]?.id || 'ward-01');
+  const [rescueWardId, setRescueWardId] = useState(currentUser?.wardId || state.wards[0]?.id || 'ward-01');
   const [rescueRoad, setRescueRoad] = useState('Baseline Road (A1)');
   const [rescueNotes, setRescueNotes] = useState('Water rising rapidly above 3 feet near entrance.');
   const [rescueSpecialNeeds, setRescueSpecialNeeds] = useState<string[]>(['Elderly', 'Infants']);
   const [isSubmittingRescue, setIsSubmittingRescue] = useState(false);
   const [rescueResult, setRescueResult] = useState<any>(null);
+
+  React.useEffect(() => {
+    if (currentUser) {
+      if (currentUser.fullName) {
+        setUserName(currentUser.fullName);
+        setRescueName(currentUser.fullName);
+      }
+      if (currentUser.phone) {
+        setContactPhone(currentUser.phone);
+        setRescuePhone(currentUser.phone);
+      }
+      if (currentUser.wardId) {
+        setSelectedWardId(currentUser.wardId);
+        setRescueWardId(currentUser.wardId);
+      }
+    }
+  }, [currentUser]);
 
   const getNearestAccommodatingShelter = (reportLat: number, reportLng: number, requiredCapacity: number) => {
     let bestShelter: any = null;
@@ -216,6 +235,7 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
       const reportLng = customLng ?? (selectedWard.center[1] + (Math.random() - 0.5) * 0.005);
 
       const payload = {
+        userId: currentUser?.id || currentUser?.username,
         userName,
         contactPhone,
         hazardType,
@@ -242,7 +262,7 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
   const handleNearbyVerify = async (caseId: string, confirmed: boolean) => {
     try {
       await api.verifyCase(caseId, {
-        userId: 'citizen-current-user',
+        userId: currentUser?.id || 'citizen-current-user',
         confirmed,
         note: confirmed ? 'Confirmed by nearby citizen: water is actively accumulating.' : 'False report: road is clear.',
       });
@@ -259,6 +279,7 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
       setIsSubmittingRescue(true);
       const selectedWard = state.wards.find(w => w.id === rescueWardId) || state.wards[0];
       const payload = {
+        userId: currentUser?.id || currentUser?.username,
         citizenName: rescueName,
         citizenPhone: rescuePhone,
         householdCount: rescueCount,
@@ -433,9 +454,23 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                 
                 {/* File / Camera Upload Button Box */}
                 <div className="mb-3">
-                  <label className="flex items-center justify-center space-x-2.5 bg-slate-950 hover:bg-slate-900 border-2 border-dashed border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold px-4 py-3 rounded-xl cursor-pointer transition shadow-inner group">
-                    <Camera className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform" />
-                    <span className="text-xs sm:text-sm">{isUploadingPhoto ? 'Uploading Photo...' : 'Click to Upload Photo or Take Picture'}</span>
+                  <label className={`flex items-center justify-center space-x-2.5 border-2 border-dashed font-bold px-4 py-3 rounded-xl cursor-pointer transition shadow-inner group ${
+                    imageUrl
+                      ? 'bg-emerald-950/40 hover:bg-emerald-900/50 border-emerald-500/80 text-emerald-300'
+                      : 'bg-slate-950 hover:bg-slate-900 border-cyan-500/50 hover:border-cyan-400 text-cyan-300'
+                  }`}>
+                    {imageUrl ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform shrink-0" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform shrink-0" />
+                    )}
+                    <span className="text-xs sm:text-sm">
+                      {isUploadingPhoto
+                        ? 'Uploading Photo...'
+                        : imageUrl
+                        ? '✓ Photo Attached (Click to Change Photo)'
+                        : 'Click to Upload Photo or Take Picture'}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -443,6 +478,17 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                       className="hidden"
                     />
                   </label>
+
+                  {imageUrl && (
+                    <div className="mt-2 rounded-xl overflow-hidden border border-emerald-800/60 h-28 bg-slate-950 flex items-center justify-center relative group">
+                      <img src={imageUrl} alt="Attached Hazard Proof" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-emerald-300 bg-slate-900/90 px-3 py-1 rounded-lg border border-emerald-500/50 font-bold">
+                          Attached Photo Preview
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sample Preset Photos */}
@@ -609,15 +655,6 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                     </div>
                   );
                 })()}
-
-                {submittedResult.case && (
-                  <button
-                    onClick={() => onSelectCase(submittedResult.case)}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2 border border-slate-700"
-                  >
-                    <span>Inspect Full 5 Checks in AI Modal</span>
-                  </button>
-                )}
               </div>
             ) : (
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl text-center space-y-3">
