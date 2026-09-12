@@ -11,21 +11,31 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
   const isDataUri = imgUrl.startsWith('data:image/');
   const urlLower = isDataUri ? '' : imgUrl.toLowerCase();
 
-  // 1. Pre-filter check for obvious non-hazard meme / joke / person / selfie keywords
+  // 1. Pre-filter check for non-hazard / meme / person / selfie / pet / indoor keywords in filename/URL/description
   const isInvalidOrMeme = 
     urlLower.includes('meme') || 
     urlLower.includes('cat') ||
     urlLower.includes('dog') ||
     urlLower.includes('person') ||
+    urlLower.includes('people') ||
+    urlLower.includes('human') ||
+    urlLower.includes('man') ||
+    urlLower.includes('woman') ||
+    urlLower.includes('boy') ||
+    urlLower.includes('girl') ||
     urlLower.includes('selfie') ||
     urlLower.includes('portrait') ||
+    urlLower.includes('face') ||
     urlLower.includes('joke') || 
     urlLower.includes('1514888286974-6c03e2ca1dba') ||
     desc.includes('cat') ||
     desc.includes('dog') ||
     desc.includes('person') ||
+    desc.includes('people') ||
+    desc.includes('human') ||
     desc.includes('selfie') ||
     desc.includes('portrait') ||
+    desc.includes('face') ||
     desc.includes('meme') ||
     desc.includes('joke') || 
     desc.includes('fake report') || 
@@ -61,18 +71,21 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
     urlLower.includes('618773928');   // Landslide sample
 
   if (nvidiaAi.isConfigured() && !isKnownDisasterSample) {
-    const visionPrompt = `Analyze this uploaded hazard report photo carefully:
-Reported Hazard Type: ${hazardType}
+    const visionPrompt = `Analyze this photo uploaded for an emergency urban hazard report:
+Reported Category: ${hazardType}
 User Description: ${report.description || 'None'}
 
-Determine if the photo shows an AUTHENTIC urban disaster hazard (flood waterlogging, fallen tree on road, landslide/mudflow, blocked storm drain, downed powerline).
-If the photo shows a person, selfie, face, portrait, domestic animal (cat/dog), indoor room, meme, document, or non-hazard object, set isAuthenticHazard to false.
+Your job is to reject fake or non-disaster uploads.
+1. Does this photo show an authentic disaster hazard on a public road/street (such as deep flood waterlogging, fallen tree blocking lanes, hillside landslide/mudflow, blocked storm drain, downed electric line)?
+2. Or does this photo show a person/human, face, selfie, portrait, cat, dog, indoor room, furniture, food, car interior, document, or non-hazard item?
+
+If it shows a person, selfie, face, pet, indoor room, or non-hazard item, you MUST mark isAuthenticHazard: false and detectedHazard: "NONE".
 
 Respond ONLY with JSON:
 {"isAuthenticHazard": boolean, "detectedHazard": "FLOOD"|"FALLEN_TREE"|"LANDSLIDE"|"BLOCKED_DRAIN"|"DOWNED_POWERLINE"|"NONE", "confidence": number, "summary": "1 sentence explanation"}`;
 
     const rawResponse = await nvidiaAi.generateCompletion({
-      systemPrompt: 'You are an urban disaster vision AI system. Respond strictly with JSON.',
+      systemPrompt: 'You are a strict disaster image verification AI. Respond ONLY with valid JSON.',
       userPrompt: visionPrompt,
       imageUrl: imgUrl,
       maxTokens: 150,
@@ -96,7 +109,17 @@ Respond ONLY with JSON:
       } catch (e) {
         // Fallback
       }
+    } else {
+      // If NIM API fails to return a response for custom uploaded files (e.g. data URI payload or unknown URL), default to verification needed
+      if (!isKnownDisasterSample && isDataUri) {
+        aiIsAuthentic = false;
+        aiSummary = 'Photo rejected: Image content could not be verified as an authentic disaster hazard.';
+      }
     }
+  } else if (!isKnownDisasterSample && isDataUri) {
+    // If NIM API is not configured or offline for local uploads, reject unverified base64 uploads
+    aiIsAuthentic = false;
+    aiSummary = 'Photo rejected: Local upload requires AI visual verification.';
   }
 
   // If AI Vision explicitly determines the uploaded image is non-hazard / irrelevant
