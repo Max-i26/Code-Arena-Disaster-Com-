@@ -362,7 +362,7 @@ class DatabaseService {
           \`ward_id\` VARCHAR(64),
           \`trust_score\` FLOAT DEFAULT 0.85,
           \`created_at\` DATETIME NOT NULL,
-          \`verification_status\` VARCHAR(32) DEFAULT 'APPROVED',
+          \`verification_status\` VARCHAR(32) DEFAULT 'PENDING',
           \`nic_number\` VARCHAR(64),
           \`nic_document_url\` LONGTEXT,
           \`official_details\` LONGTEXT
@@ -371,10 +371,10 @@ class DatabaseService {
 
       // Column migrations for users
       const userColumns = [
-        'verification_status VARCHAR(32) DEFAULT "APPROVED"',
+        'verification_status VARCHAR(32) DEFAULT "PENDING"',
         'nic_number VARCHAR(64)',
-        'nic_document_url TEXT',
-        'official_details TEXT',
+        'nic_document_url LONGTEXT',
+        'official_details LONGTEXT',
       ];
       for (const colDef of userColumns) {
         try { await this.pool.query(`ALTER TABLE \`users\` ADD COLUMN ${colDef}`); } catch (e) { }
@@ -499,6 +499,7 @@ class DatabaseService {
 
       // Schema Migration for existing databases: ensure image/large text columns are LONGTEXT & columns match dump
       try {
+        await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `verification_status` VARCHAR(32) DEFAULT "PENDING"');
         await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `nic_document_url` LONGTEXT');
         await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `official_details` LONGTEXT');
         await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `image_url` LONGTEXT');
@@ -518,8 +519,12 @@ class DatabaseService {
       for (const u of this.tables.users.values()) {
         try {
           await this.pool.query(
-            `INSERT IGNORE INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`, \`verification_status\`, \`nic_number\`, \`nic_document_url\`, \`official_details\`)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`, \`verification_status\`, \`nic_number\`, \`nic_document_url\`, \`official_details\`)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE 
+               \`verification_status\` = VALUES(\`verification_status\`),
+               \`nic_document_url\` = VALUES(\`nic_document_url\`),
+               \`official_details\` = VALUES(\`official_details\`)`,
             [
               u.id,
               u.username,
@@ -531,7 +536,7 @@ class DatabaseService {
               u.wardId || 'ward-01',
               u.trustScore || 0.85,
               this.toMysqlDatetime(u.createdAt),
-              u.verificationStatus || 'APPROVED',
+              u.verificationStatus || (u.role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING'),
               u.nicNumber || '',
               u.nicDocumentUrl || '',
               u.officialDetails || '',
@@ -678,10 +683,10 @@ class DatabaseService {
             wardId: r.ward_id,
             trustScore: r.trust_score,
             createdAt: r.created_at,
-            verificationStatus: r.verification_status || 'APPROVED',
-            nicNumber: r.nic_number,
-            nicDocumentUrl: r.nic_document_url,
-            officialDetails: r.official_details,
+            verificationStatus: r.verification_status || (r.role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING'),
+            nicNumber: r.nic_number || '',
+            nicDocumentUrl: r.nic_document_url || '',
+            officialDetails: r.official_details || '',
           };
         }
       } catch (err) {
@@ -709,10 +714,10 @@ class DatabaseService {
             wardId: r.ward_id,
             trustScore: r.trust_score,
             createdAt: r.created_at,
-            verificationStatus: r.verification_status || 'APPROVED',
-            nicNumber: r.nic_number,
-            nicDocumentUrl: r.nic_document_url,
-            officialDetails: r.official_details,
+            verificationStatus: r.verification_status || (r.role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING'),
+            nicNumber: r.nic_number || '',
+            nicDocumentUrl: r.nic_document_url || '',
+            officialDetails: r.official_details || '',
           };
         }
       } catch (err) {
@@ -744,10 +749,10 @@ class DatabaseService {
               wardId: r.ward_id,
               trustScore: r.trust_score,
               createdAt: r.created_at,
-              verificationStatus: r.verification_status || 'PENDING',
-              nicNumber: r.nic_number,
-              nicDocumentUrl: r.nic_document_url,
-              officialDetails: r.official_details,
+              verificationStatus: r.verification_status || (r.role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING'),
+              nicNumber: r.nic_number || '',
+              nicDocumentUrl: r.nic_document_url || '',
+              officialDetails: r.official_details || '',
             });
           }
           return allUsers;
@@ -773,7 +778,17 @@ class DatabaseService {
       try {
         await this.pool.query(
           `INSERT INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`, \`verification_status\`, \`nic_number\`, \`nic_document_url\`, \`official_details\`)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE
+             \`password_hash\` = VALUES(\`password_hash\`),
+             \`full_name\` = VALUES(\`full_name\`),
+             \`email\` = VALUES(\`email\`),
+             \`role\` = VALUES(\`role\`),
+             \`phone\` = VALUES(\`phone\`),
+             \`verification_status\` = VALUES(\`verification_status\`),
+             \`nic_number\` = VALUES(\`nic_number\`),
+             \`nic_document_url\` = VALUES(\`nic_document_url\`),
+             \`official_details\` = VALUES(\`official_details\`)`,
           [
             user.id,
             user.username,
@@ -821,9 +836,9 @@ class DatabaseService {
               trustScore: r.trust_score,
               createdAt: r.created_at,
               verificationStatus: r.verification_status || 'PENDING',
-              nicNumber: r.nic_number,
-              nicDocumentUrl: r.nic_document_url,
-              officialDetails: r.official_details,
+              nicNumber: r.nic_number || '',
+              nicDocumentUrl: r.nic_document_url || '',
+              officialDetails: r.official_details || '',
             });
           }
           return pendingUsers;
@@ -870,7 +885,7 @@ class DatabaseService {
         await this.pool.query(
           `INSERT INTO \`cases\` (\`id\`, \`report_id\`, \`source\`, \`created_at\`, \`hazard_type\`, \`status\`, \`road_name\`, \`ward_id\`, \`image_url\`, \`description\`, \`road_closed\`, \`urgency\`, \`confidence_score\`, \`reporter_name\`, \`reporter_phone\`)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`), \`reporter_name\` = VALUES(\`reporter_name\`), \`reporter_phone\` = VALUES(\`reporter_phone\`)`,
+           ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`image_url\` = VALUES(\`image_url\`), \`description\` = VALUES(\`description\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`), \`reporter_name\` = VALUES(\`reporter_name\`), \`reporter_phone\` = VALUES(\`reporter_phone\`)`,
           [
             c.id || `case-${Date.now()}`,
             c.reportId || '',
