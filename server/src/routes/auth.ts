@@ -120,7 +120,8 @@ authRouter.post('/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     const userId = `usr-${role.toLowerCase()}-${Date.now()}`;
-    const verificationStatus = role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING';
+    // Citizens get instant access; official roles require admin verification
+    const verificationStatus = (isOfficialRole) ? 'PENDING' : 'APPROVED';
 
     const newUser: DbUser = {
       id: userId,
@@ -135,7 +136,7 @@ authRouter.post('/register', async (req, res) => {
       createdAt: new Date().toISOString(),
       verificationStatus,
       nicNumber: cleanNic,
-      nicDocumentUrl: nicDocumentUrl.trim(),
+      nicDocumentUrl: (nicDocumentUrl || '').trim(),
       officialDetails: officialDetails.trim(),
     };
 
@@ -150,9 +151,13 @@ authRouter.post('/register', async (req, res) => {
 
     const { passwordHash, ...userPayload } = newUser;
 
+    const message = isOfficialRole
+      ? 'Account registered successfully! Verification status: PENDING. System Administrator must review and approve your registration before portal access is activated.'
+      : 'Account registered successfully! You now have full access to the Citizen portal.';
+
     res.json({
       success: true,
-      message: 'Account registered successfully! Verification status: PENDING. System Administrator must review and approve your registration before portal access is activated.',
+      message,
       token,
       user: userPayload,
       dbStatus: dbService.getDbStatus(),
