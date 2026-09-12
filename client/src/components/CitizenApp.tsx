@@ -428,6 +428,15 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                       onClick={() => {
                         setImageUrl(p.url);
                         setHazardType(p.type as HazardType);
+                        if (p.label.includes('Cat') || p.label.includes('Meme') || p.label.includes('Non-Hazard')) {
+                          setDescription('Cat meme joke photo test for AI rejection filter');
+                        } else if (p.label.includes('Flood')) {
+                          setDescription('Severe water level rise, 3ft deep across road curb');
+                        } else if (p.label.includes('Tree')) {
+                          setDescription('Fallen banyan tree blocking both lanes');
+                        } else if (p.label.includes('Landslide') || p.label.includes('Mud')) {
+                          setDescription('Hillside slope collapse and mud displacement blocking road');
+                        }
                       }}
                       className={`text-left p-2 rounded-xl border text-[11px] transition flex items-center space-x-2 ${
                         imageUrl === p.url

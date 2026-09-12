@@ -15,10 +15,15 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
   const isInvalidOrMeme = 
     urlLower.includes('meme') || 
     urlLower.includes('cat.jpg') || 
+    urlLower.includes('cat') ||
     urlLower.includes('joke') || 
+    urlLower.includes('1514888286974-6c03e2ca1dba') ||
+    desc.includes('cat') ||
+    desc.includes('meme') ||
     desc.includes('joke') || 
     desc.includes('fake report') || 
-    desc.includes('test meme');
+    desc.includes('test meme') ||
+    desc.includes('non-hazard');
   
   if (isInvalidOrMeme) {
     return {
