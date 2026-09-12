@@ -70,6 +70,11 @@ async function runEndToEndVerification() {
 
     // 2. STAGE 03: AI SPAM / MEME FILTERING TEST
     console.log('\n--- 2. Testing AI Spam / Meme Photo Rejection ---');
+    await fetch(`${BASE_URL}/api/users/unban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: 'spammer-01' }),
+    });
     const memeReportRes = await fetch(`${BASE_URL}/api/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

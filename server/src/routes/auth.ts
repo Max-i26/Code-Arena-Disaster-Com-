@@ -48,8 +48,7 @@ authRouter.post('/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     const userId = `usr-${role.toLowerCase()}-${Date.now()}`;
-    const hasNicDoc = Boolean(nicDocumentUrl && nicDocumentUrl.trim().length > 0);
-    const verificationStatus = (isOfficialRole || hasNicDoc) ? 'PENDING' : 'APPROVED';
+    const verificationStatus = role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING';
 
     const newUser: DbUser = {
       id: userId,
@@ -81,9 +80,7 @@ authRouter.post('/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: (isOfficialRole || hasNicDoc)
-        ? 'Account registered successfully! Verification status: PENDING. System Administrator must review your uploaded photo proof and credentials before portal access is activated.'
-        : 'Citizen account created successfully!',
+      message: 'Account registered successfully! Verification status: PENDING. System Administrator must review and approve your registration before portal access is activated.',
       token,
       user: userPayload,
       dbStatus: dbService.getDbStatus(),

@@ -49,6 +49,17 @@ apiRouter.get('/db/status', (req, res) => {
   });
 });
 
+// 1c. Registered User Accounts & Reporter Directory (Admin & Ban Management)
+apiRouter.get('/users', async (req, res) => {
+  try {
+    const users = await db.getAllUsers();
+    const safeUsers = users.map(({ passwordHash, ...u }) => u);
+    res.json({ success: true, users: safeUsers });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Failed to fetch registered users.' });
+  }
+});
+
 // 2. Submit Citizen Report (Runs 6-Stage Pipeline)
 apiRouter.post('/reports', async (req, res) => {
   try {

@@ -79,8 +79,9 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
   // AI Log filter state
   const [logFilter, setLogFilter] = useState<LogFilterAction>('ALL');
 
-  // Verification Queue & Database State
+  // Verification Queue, Users & Database State
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [isLoadingPending, setIsLoadingPending] = useState(false);
   const [dbMetrics, setDbMetrics] = useState<any>(null);
 
@@ -106,6 +107,17 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
     }
   }, []);
 
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      const res = await api.getAllUsers();
+      if (res.success) {
+        setAllUsers(res.users || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch all users:', err);
+    }
+  }, []);
+
   const fetchPendingVerifications = useCallback(async () => {
     try {
       setIsLoadingPending(true);
@@ -114,12 +126,13 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
         setPendingVerifications(res.pendingUsers || []);
       }
       fetchDbStatus();
+      fetchAllUsers();
     } catch (err) {
       console.error('Failed to fetch pending verifications:', err);
     } finally {
       setIsLoadingPending(false);
     }
-  }, [fetchDbStatus]);
+  }, [fetchDbStatus, fetchAllUsers]);
 
   useEffect(() => {
     fetchPendingVerifications();
@@ -223,12 +236,14 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
     }
   };
 
-  const handleBanUser = async () => {
-    if (!banUserIdInput.trim()) return;
+  const handleBanUser = async (targetUserId?: string) => {
+    const idToBan = (targetUserId || banUserIdInput).trim();
+    if (!idToBan) return;
     try {
-      await api.banUser(banUserIdInput.trim());
+      await api.banUser(idToBan);
       setBanUserIdInput('');
-      alert(`User ${banUserIdInput} banned from reporting.`);
+      alert(`User account "${idToBan}" banned from reporting.`);
+      fetchPendingVerifications();
       onRefresh();
     } catch (err: any) {
       alert(`Failed to ban user: ${err.message}`);
@@ -238,7 +253,8 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
   const handleUnbanUser = async (userId: string) => {
     try {
       await api.unbanUser(userId);
-      alert(`User ${userId} unbanned.`);
+      alert(`User account "${userId}" unbanned.`);
+      fetchPendingVerifications();
       onRefresh();
     } catch (err: any) {
       alert(`Failed to unban user: ${err.message}`);
@@ -770,27 +786,51 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
 
           {/* False Reporter Management */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-            <h3 className="text-base font-extrabold text-white uppercase tracking-wider flex items-center space-x-2.5 border-b border-slate-800 pb-3">
-              <UserX className="w-5 h-5 text-rose-400" />
-              <span>False Reporter &amp; Spam Ban Management</span>
-            </h3>
-            <div className="flex space-x-2.5">
-              <input
-                type="text"
-                placeholder="User ID or Phone to Ban..."
-                value={banUserIdInput}
-                onChange={(e) => setBanUserIdInput(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 font-medium"
-              />
-              <button
-                onClick={handleBanUser}
-                className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm transition shadow"
-              >
-                Ban User
-              </button>
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-base font-extrabold text-white uppercase tracking-wider flex items-center space-x-2.5">
+                <UserX className="w-5 h-5 text-rose-400" />
+                <span>False Reporter &amp; Spam Ban Management</span>
+              </h3>
+              <span className="text-xs font-mono font-bold text-slate-400">
+                {allUsers.length} Registered Accounts
+              </span>
             </div>
-            <div className="text-xs space-y-2">
-              <span className="text-slate-300 font-bold text-xs block">Currently Banned Users:</span>
+
+            {/* Quick Selector Dropdown & Input */}
+            <div className="space-y-2">
+              <label className="text-xs text-slate-300 font-semibold block">Select Registered User or Type ID/Phone:</label>
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
+                <select
+                  value={banUserIdInput}
+                  onChange={(e) => setBanUserIdInput(e.target.value)}
+                  className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs font-mono text-cyan-300 focus:outline-none focus:border-rose-500 max-w-xs"
+                >
+                  <option value="">-- Select Registered User --</option>
+                  {allUsers.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName} ({u.role}) — ID: {u.id}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or enter User ID / Phone..."
+                  value={banUserIdInput}
+                  onChange={(e) => setBanUserIdInput(e.target.value)}
+                  className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500 font-mono font-bold min-w-[180px]"
+                />
+                <button
+                  onClick={() => handleBanUser()}
+                  className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow shrink-0"
+                >
+                  Ban User
+                </button>
+              </div>
+            </div>
+
+            {/* Banned Users Pill List */}
+            <div className="text-xs space-y-2 pt-1 border-t border-slate-800">
+              <span className="text-slate-300 font-bold text-xs block">Currently Banned Users / IPs:</span>
               {state.bannedUsers.length === 0 ? (
                 <div className="text-slate-400 text-xs italic">No active user bans.</div>
               ) : (
@@ -801,11 +841,80 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
                       className="bg-rose-950 border border-rose-800 px-3 py-1 rounded-xl flex items-center space-x-2 text-xs text-rose-200 font-mono font-bold"
                     >
                       <span>{u}</span>
-                      <button onClick={() => handleUnbanUser(u)} className="text-slate-400 hover:text-white text-sm">&times;</button>
+                      <button onClick={() => handleUnbanUser(u)} className="text-slate-400 hover:text-white text-sm" title="Unban User">&times;</button>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Registered User Directory Table */}
+            <div className="space-y-2 pt-2 border-t border-slate-800">
+              <span className="text-xs text-slate-300 font-bold uppercase tracking-wider block">
+                User Account &amp; Reporter Directory
+              </span>
+              <div className="max-h-56 overflow-y-auto border border-slate-800 rounded-xl bg-slate-950">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] sticky top-0 border-b border-slate-800">
+                    <tr>
+                      <th className="p-2.5">User ID</th>
+                      <th className="p-2.5">Name / Role</th>
+                      <th className="p-2.5">Status</th>
+                      <th className="p-2.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-850">
+                    {allUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-4 text-center text-slate-500 italic">No registered users found.</td>
+                      </tr>
+                    ) : (
+                      allUsers.map((u) => {
+                        const isBanned = state.bannedUsers.includes(u.id) || state.bannedUsers.includes(u.username);
+                        return (
+                          <tr key={u.id} className="hover:bg-slate-900/60 transition">
+                            <td className="p-2.5 font-extrabold text-cyan-300 truncate max-w-[100px]" title={u.id}>
+                              {u.id}
+                            </td>
+                            <td className="p-2.5 space-y-0.5">
+                              <div className="font-bold text-white text-xs truncate">{u.fullName || u.username}</div>
+                              <div className="text-[10px] text-slate-400 uppercase">{u.role}</div>
+                            </td>
+                            <td className="p-2.5">
+                              {isBanned ? (
+                                <span className="bg-rose-950 text-rose-300 border border-rose-800 px-2 py-0.5 rounded text-[10px] font-bold">
+                                  ⛔ BANNED
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded text-[10px] font-bold">
+                                  ✓ ACTIVE
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2.5 text-right">
+                              {isBanned ? (
+                                <button
+                                  onClick={() => handleUnbanUser(u.id)}
+                                  className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 border border-emerald-700 px-2.5 py-1 rounded-lg transition"
+                                >
+                                  Unban
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleBanUser(u.id)}
+                                  className="text-[11px] font-bold text-rose-300 hover:text-rose-200 bg-rose-950/60 border border-rose-800 px-2.5 py-1 rounded-lg transition"
+                                >
+                                  Ban User
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 

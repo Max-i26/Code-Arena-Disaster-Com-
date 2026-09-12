@@ -256,6 +256,39 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
+      // 7. Table: sensors
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`sensors\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`type\` VARCHAR(64),
+          \`ward_id\` VARCHAR(64),
+          \`location_name\` VARCHAR(255),
+          \`status\` VARCHAR(32),
+          \`last_value\` FLOAT,
+          \`unit\` VARCHAR(32)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // 8. Table: ai_tuning_logs
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`ai_tuning_logs\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`case_id\` VARCHAR(128),
+          \`officer_id\` VARCHAR(128),
+          \`officer_action\` VARCHAR(64),
+          \`confidence_score\` FLOAT,
+          \`created_at\` DATETIME
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // 9. Table: banned_users
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`banned_users\` (
+          \`user_id\` VARCHAR(128) PRIMARY KEY,
+          \`banned_at\` DATETIME
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
       this.isConnectedToMysql = true;
       console.log('[ResQCity SQL DB] Successfully connected to MySQL Engine (localhost:3306 / resqcity_db)');
 
@@ -445,16 +478,47 @@ class DatabaseService {
     return null;
   }
 
+  public async getAllUsers(): Promise<DbUser[]> {
+    const allUsers: DbUser[] = [];
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        const [rows]: any = await this.pool.query('SELECT * FROM `users` ORDER BY `created_at` DESC');
+        if (rows) {
+          for (const r of rows) {
+            allUsers.push({
+              id: r.id,
+              username: r.username,
+              passwordHash: r.password_hash,
+              fullName: r.full_name,
+              email: r.email,
+              role: r.role as UserRole,
+              phone: r.phone,
+              wardId: r.ward_id,
+              trustScore: r.trust_score,
+              createdAt: r.created_at,
+              verificationStatus: r.verification_status || 'PENDING',
+              nicNumber: r.nic_number,
+              nicDocumentUrl: r.nic_document_url,
+              officialDetails: r.official_details,
+            });
+          }
+          return allUsers;
+        }
+      } catch (err) {
+        console.error('MySQL query error:', err);
+      }
+    }
+
+    return Array.from(this.tables.users.values());
+  }
+
   public async createUser(user: DbUser): Promise<DbUser> {
     const cleanUsername = user.username.toLowerCase().trim();
     user.username = cleanUsername;
     
-    // Set pending status if NIC image is provided or role is official
-    const hasNicDoc = Boolean(user.nicDocumentUrl && user.nicDocumentUrl.trim().length > 0);
-    const isOfficialRole = user.role === 'COUNCIL_OFFICER' || user.role === 'FIELD_CREW' || user.role === 'RELIEF_DESK';
-    
+    // All registrations require Admin approval except System Admins
     if (user.verificationStatus === undefined) {
-      user.verificationStatus = (isOfficialRole || hasNicDoc) ? 'PENDING' : 'APPROVED';
+      user.verificationStatus = (user.role === 'SYSTEM_ADMIN') ? 'APPROVED' : 'PENDING';
     }
 
     if (this.isConnectedToMysql && this.pool) {
