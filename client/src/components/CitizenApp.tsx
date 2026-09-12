@@ -810,7 +810,7 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                           {c.roadClosed ? '⛔ Road Closed' : '✓ Road Open'}
                         </span>
                         <button
-                          onClick={() => onSelectCase(c)}
+                          onClick={() => onSelectCase?.(c)}
                           className="text-cyan-400 hover:text-cyan-300 font-bold underline"
                         >
                           Inspect 5 Checks ➔
