@@ -16,6 +16,7 @@ import { aiFeedback } from '../services/aiFeedback';
 import { stormSimulator } from '../services/simulator';
 import { calculateSafeRoute } from '../services/routing';
 import { CitizenReport, HazardCase, ReliefRequest } from '../types';
+import { validatePhone, validateFullName } from '../utils/validation';
 
 export const apiRouter = Router();
 
@@ -79,8 +80,35 @@ apiRouter.post('/reports', async (req, res) => {
       contactPhone: inputContactPhone = '',
     } = req.body;
 
+    // Field Validations before processing or saving
+    const validHazardTypes = ['FLOOD', 'FALLEN_TREE', 'LANDSLIDE', 'BLOCKED_DRAIN', 'DOWNED_POWERLINE'];
+    if (!hazardType || !validHazardTypes.includes(hazardType)) {
+      return res.status(400).json({ error: `Invalid or missing hazard type. Must be one of: ${validHazardTypes.join(', ')}` });
+    }
+
+    if (!roadName || roadName.trim().length < 2) {
+      return res.status(400).json({ error: 'Location / Road Name is required (at least 2 characters).' });
+    }
+
+    if (!description || description.trim().length < 5) {
+      return res.status(400).json({ error: 'Description is required (at least 5 characters explaining the incident).' });
+    }
+
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    if (isNaN(numLat) || isNaN(numLng) || numLat < -90 || numLat > 90 || numLng < -180 || numLng > 180) {
+      return res.status(400).json({ error: 'Valid geographic coordinates (latitude & longitude) are required.' });
+    }
+
+    if (needsRescue) {
+      const numCount = Number(householdCount);
+      if (isNaN(numCount) || numCount < 1 || numCount > 100) {
+        return res.status(400).json({ error: 'Household member count must be a positive number between 1 and 100.' });
+      }
+    }
+
     let finalUserId = userId || 'citizen-' + Math.floor(Math.random() * 1000);
-    let finalUserName = (inputUserName && inputUserName.trim()) ? inputUserName.trim() : 'Citizen User';
+    let finalUserName = (inputUserName && inputUserName.trim()) ? inputUserName.trim() : '';
     let finalPhone = (inputContactPhone && inputContactPhone.trim()) ? inputContactPhone.trim() : '';
     let userTrustScore = 0.85;
 
@@ -89,8 +117,7 @@ apiRouter.post('/reports', async (req, res) => {
       const dbUser = (await db.getUserById(userId)) || (await db.getUserByUsername(userId));
       if (dbUser) {
         finalUserId = dbUser.id;
-        // Fallback to dbUser profile name/phone only if citizen left form inputs blank
-        if (!inputUserName || !inputUserName.trim() || inputUserName === 'Citizen User') {
+        if (!finalUserName || finalUserName === 'Citizen User') {
           finalUserName = dbUser.fullName || dbUser.username;
         }
         if (!finalPhone) {
@@ -105,6 +132,24 @@ apiRouter.post('/reports', async (req, res) => {
         if (!finalPhone) finalPhone = dbUser.phone || '';
         userTrustScore = dbUser.trustScore ?? 0.85;
       }
+    }
+
+    if (!finalUserName) finalUserName = 'Citizen User';
+
+    // Validate reporter name
+    const nameVal = validateFullName(finalUserName);
+    if (!nameVal.valid) {
+      return res.status(400).json({ error: 'Reporter full name is required.' });
+    }
+
+    // Validate reporter phone
+    if (finalPhone) {
+      const phoneVal = validatePhone(finalPhone);
+      if (!phoneVal.valid) {
+        return res.status(400).json({ error: phoneVal.error });
+      }
+    } else {
+      return res.status(400).json({ error: 'Contact phone number is required so rescue squads can coordinate with you.' });
     }
 
     // Check banned user
@@ -312,12 +357,16 @@ apiRouter.post('/tickets/:id/resolve', (req, res) => {
     return res.status(404).json({ error: 'Ticket not found' });
   }
 
+  if (!resolutionNotes || resolutionNotes.trim().length < 5) {
+    return res.status(400).json({ error: 'Resolution notes are required (at least 5 characters explaining the repair work).' });
+  }
+
   // Mark ticket resolved
   const updatedTicket = store.updateTicket(ticket.id, {
     status: 'RESOLVED',
     resolutionPhotoUrl: resolutionPhotoUrl || 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=800&q=80',
     resolvedAt: new Date().toISOString(),
-    resolutionNotes: resolutionNotes || 'Hazard cleared completely; road flushed and safe for transit.',
+    resolutionNotes: resolutionNotes.trim(),
   });
 
   // Free crew
@@ -357,21 +406,44 @@ apiRouter.post('/relief/request', async (req, res) => {
     lng,
   } = req.body;
 
-  let finalCitizenName = inputCitizenName || 'Emergency Citizen';
-  let finalCitizenPhone = inputCitizenPhone || '+94 77 000 0000';
+  let finalCitizenName = (inputCitizenName && inputCitizenName.trim()) ? inputCitizenName.trim() : '';
+  let finalCitizenPhone = (inputCitizenPhone && inputCitizenPhone.trim()) ? inputCitizenPhone.trim() : '';
 
   if (userId) {
     const dbUser = (await db.getUserById(userId)) || (await db.getUserByUsername(userId));
     if (dbUser) {
-      finalCitizenName = dbUser.fullName;
-      if (dbUser.phone) finalCitizenPhone = dbUser.phone;
+      if (!finalCitizenName) finalCitizenName = dbUser.fullName;
+      if (!finalCitizenPhone && dbUser.phone) finalCitizenPhone = dbUser.phone;
     }
   } else if (inputCitizenName) {
     const dbUser = await db.getUserByUsername(inputCitizenName);
     if (dbUser) {
-      finalCitizenName = dbUser.fullName;
-      if (dbUser.phone) finalCitizenPhone = dbUser.phone;
+      if (!finalCitizenName) finalCitizenName = dbUser.fullName;
+      if (!finalCitizenPhone && dbUser.phone) finalCitizenPhone = dbUser.phone;
     }
+  }
+
+  if (!finalCitizenName) finalCitizenName = 'Emergency Citizen';
+  if (!finalCitizenPhone) finalCitizenPhone = '+94 77 000 0000';
+
+  // Validations
+  const nameVal = validateFullName(finalCitizenName);
+  if (!nameVal.valid) {
+    return res.status(400).json({ error: 'Citizen name is required (at least 2 characters).' });
+  }
+
+  const phoneVal = validatePhone(finalCitizenPhone);
+  if (!phoneVal.valid) {
+    return res.status(400).json({ error: phoneVal.error });
+  }
+
+  const countNum = Number(householdCount);
+  if (isNaN(countNum) || countNum < 1 || countNum > 100) {
+    return res.status(400).json({ error: 'Household member count must be between 1 and 100.' });
+  }
+
+  if (!roadName || roadName.trim().length < 2) {
+    return res.status(400).json({ error: 'Rescue location / road name is required.' });
   }
 
   const resolvedLocation = caseBuilder.resolveLocation(
@@ -583,11 +655,28 @@ apiRouter.post('/shelters/:id/toggle', (req, res) => {
 // 16. Add New Shelter
 apiRouter.post('/shelters', (req, res) => {
   const { name, wardId, location, totalCapacity, supplies, amenities, contactPhone } = req.body;
-  if (!name || !wardId) {
-    return res.status(400).json({ error: 'Shelter name and wardId are required' });
+  if (!name || name.trim().length < 3) {
+    return res.status(400).json({ error: 'Shelter name is required (at least 3 characters).' });
   }
+  if (!wardId) {
+    return res.status(400).json({ error: 'Ward selection is required for shelter location.' });
+  }
+  const cap = Number(totalCapacity);
+  if (isNaN(cap) || cap < 1) {
+    return res.status(400).json({ error: 'Total shelter capacity must be a positive number greater than 0.' });
+  }
+  // Uniqueness check
+  const duplicateShelter = store.getShelters().find(s => s.name.toLowerCase().trim() === name.toLowerCase().trim());
+  if (duplicateShelter) {
+    return res.status(400).json({ error: `A shelter named "${name.trim()}" already exists. Please choose a distinct name.` });
+  }
+  if (contactPhone) {
+    const phVal = validatePhone(contactPhone);
+    if (!phVal.valid) return res.status(400).json({ error: phVal.error });
+  }
+
   const shelter = store.addShelter({
-    name,
+    name: name.trim(),
     wardId,
     location: location || {
       lat: 6.9271,
@@ -597,7 +686,7 @@ apiRouter.post('/shelters', (req, res) => {
       wardId,
       wardName: 'City Center Ward',
     },
-    totalCapacity: Number(totalCapacity) || 100,
+    totalCapacity: cap || 100,
     currentOccupancy: 0,
     isOpen: true,
     supplies: supplies || { foodPacks: 200, waterLitres: 1000, medicalKits: 20, blankets: 150 },
@@ -610,6 +699,26 @@ apiRouter.post('/shelters', (req, res) => {
 // 17. Update Shelter
 apiRouter.put('/shelters/:id', (req, res) => {
   const { id } = req.params;
+  if (req.body.name) {
+    if (req.body.name.trim().length < 3) {
+      return res.status(400).json({ error: 'Shelter name must be at least 3 characters.' });
+    }
+    const dup = store.getShelters().find(s => s.id !== id && s.name.toLowerCase().trim() === req.body.name.toLowerCase().trim());
+    if (dup) {
+      return res.status(400).json({ error: `Another shelter named "${req.body.name.trim()}" already exists.` });
+    }
+  }
+  if (req.body.totalCapacity !== undefined) {
+    const cap = Number(req.body.totalCapacity);
+    if (isNaN(cap) || cap < 1) {
+      return res.status(400).json({ error: 'Total shelter capacity must be a positive number greater than 0.' });
+    }
+  }
+  if (req.body.contactPhone) {
+    const phVal = validatePhone(req.body.contactPhone);
+    if (!phVal.valid) return res.status(400).json({ error: phVal.error });
+  }
+
   const updated = store.updateShelter(id, req.body);
   if (!updated) {
     return res.status(404).json({ error: 'Shelter not found' });
@@ -630,11 +739,24 @@ apiRouter.delete('/shelters/:id', (req, res) => {
 // 19. Add New Field Crew
 apiRouter.post('/crews', (req, res) => {
   const { name, specialization, currentLocation, contactPhone, status } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'Crew name is required' });
+  if (!name || name.trim().length < 3) {
+    return res.status(400).json({ error: 'Crew squad name is required (at least 3 characters).' });
   }
+  const dupCrew = store.getFieldCrews().find(c => c.name.toLowerCase().trim() === name.toLowerCase().trim());
+  if (dupCrew) {
+    return res.status(400).json({ error: `A field crew squad named "${name.trim()}" already exists.` });
+  }
+  const validSpecs = ['WATER_PUMPING', 'TREE_CLEARANCE', 'RESCUE_BOAT', 'ROAD_REPAIR'];
+  if (specialization && !validSpecs.includes(specialization)) {
+    return res.status(400).json({ error: `Invalid specialization. Must be one of: ${validSpecs.join(', ')}` });
+  }
+  if (contactPhone) {
+    const phVal = validatePhone(contactPhone);
+    if (!phVal.valid) return res.status(400).json({ error: phVal.error });
+  }
+
   const crew = store.addFieldCrew({
-    name,
+    name: name.trim(),
     specialization: specialization || 'WATER_PUMPING',
     currentLocation: currentLocation || { lat: 6.9271, lng: 79.8612 },
     status: status || 'AVAILABLE',
@@ -646,6 +768,20 @@ apiRouter.post('/crews', (req, res) => {
 // 20. Update Field Crew
 apiRouter.put('/crews/:id', (req, res) => {
   const { id } = req.params;
+  if (req.body.name) {
+    if (req.body.name.trim().length < 3) {
+      return res.status(400).json({ error: 'Crew squad name must be at least 3 characters.' });
+    }
+    const dup = store.getFieldCrews().find(c => c.id !== id && c.name.toLowerCase().trim() === req.body.name.toLowerCase().trim());
+    if (dup) {
+      return res.status(400).json({ error: `Another field crew squad named "${req.body.name.trim()}" already exists.` });
+    }
+  }
+  if (req.body.contactPhone) {
+    const phVal = validatePhone(req.body.contactPhone);
+    if (!phVal.valid) return res.status(400).json({ error: phVal.error });
+  }
+
   const updated = store.updateFieldCrew(id, req.body);
   if (!updated) {
     return res.status(404).json({ error: 'Field crew not found' });

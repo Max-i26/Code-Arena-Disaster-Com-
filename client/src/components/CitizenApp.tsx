@@ -227,6 +227,27 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
 
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userName || userName.trim().length < 2) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter your Full Name (at least 2 characters) before submitting.");
+      return;
+    }
+    if (!contactPhone || contactPhone.trim().length < 9) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter a valid contact phone number (at least 9 digits) so dispatchers can verify.");
+      return;
+    }
+    if (!roadName || roadName.trim().length < 2) {
+      alert("⚠️ Input Validation Error:\n\nPlease specify the road or landmark location.");
+      return;
+    }
+    if (!description || description.trim().length < 5) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter a description of the hazard (at least 5 characters explaining conditions).");
+      return;
+    }
+    if (needsRescue && (isNaN(Number(householdCount)) || Number(householdCount) < 1)) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter a valid household member count (at least 1 person).");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       const selectedWard = state.wards.find(w => w.id === selectedWardId) || state.wards[0];
@@ -236,24 +257,25 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
 
       const payload = {
         userId: currentUser?.id || currentUser?.username,
-        userName,
-        contactPhone,
+        userName: userName.trim(),
+        contactPhone: contactPhone.trim(),
         hazardType,
         severity,
         lat: reportLat,
         lng: reportLng,
-        roadName,
+        roadName: roadName.trim(),
         imageUrl,
-        description,
+        description: description.trim(),
         needsRescue,
-        householdCount,
+        householdCount: Number(householdCount) || 1,
       };
 
       const result = await api.submitReport(payload);
       setSubmittedResult(result);
+      alert("✅ Hazard report submitted successfully and saved to MySQL database!");
       onRefresh();
     } catch (err: any) {
-      alert(`Submission failed: ${err.message}`);
+      alert(`⚠️ Report Submission Failed:\n\n${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -269,32 +291,50 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
       alert(confirmed ? 'Thank you! Your verification helped confirm this alert.' : 'Thank you! Community feedback recorded.');
       onRefresh();
     } catch (err: any) {
-      alert(`Verification failed: ${err.message}`);
+      alert(`⚠️ Verification failed: ${err.message}`);
     }
   };
 
   const handleSubmittingRescue = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!rescueName || rescueName.trim().length < 2) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter your name (at least 2 characters) for emergency rescue coordination.");
+      return;
+    }
+    if (!rescuePhone || rescuePhone.trim().length < 9) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter a valid phone number (at least 9 digits).");
+      return;
+    }
+    if (!rescueRoad || rescueRoad.trim().length < 2) {
+      alert("⚠️ Input Validation Error:\n\nPlease enter your exact road or building location.");
+      return;
+    }
+    if (isNaN(Number(rescueCount)) || Number(rescueCount) < 1) {
+      alert("⚠️ Input Validation Error:\n\nPlease specify the count of persons needing rescue (at least 1).");
+      return;
+    }
+
     try {
       setIsSubmittingRescue(true);
       const selectedWard = state.wards.find(w => w.id === rescueWardId) || state.wards[0];
       const payload = {
         userId: currentUser?.id || currentUser?.username,
-        citizenName: rescueName,
-        citizenPhone: rescuePhone,
-        householdCount: rescueCount,
+        citizenName: rescueName.trim(),
+        citizenPhone: rescuePhone.trim(),
+        householdCount: Number(rescueCount) || 1,
         specialNeeds: rescueSpecialNeeds,
-        roadName: rescueRoad,
+        roadName: rescueRoad.trim(),
         lat: customLat ?? selectedWard.center[0],
         lng: customLng ?? selectedWard.center[1],
-        notes: rescueNotes,
+        notes: rescueNotes.trim(),
       };
 
       const res = await api.requestRescue(payload);
       setRescueResult(res);
+      alert("✅ Emergency Rescue Request submitted and saved to MySQL! Nearest shelter matched.");
       onRefresh();
     } catch (err: any) {
-      alert(`Rescue Request failed: ${err.message}`);
+      alert(`⚠️ Rescue Request failed:\n\n${err.message}`);
     } finally {
       setIsSubmittingRescue(false);
     }

@@ -14,5 +14,21 @@
     "nicNumber": "199483720191V",
     "nicDocumentUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
     "officialDetails": "CITIZEN Registered Personnel"
+  },
+  {
+    "id": "usr-council_officer-1789217034752",
+    "username": "sanodyav@gmail.com",
+    "passwordHash": "$2b$10$.yy9YMuNC.O/M4aq.FYJZufC84hj8Vjcxc1I2PjdhHNuaBrHZeVzu",
+    "fullName": "sanooo",
+    "email": "sanodya@gmail.com",
+    "role": "COUNCIL_OFFICER",
+    "phone": "+94 77 123 4567",
+    "wardId": "ward-01",
+    "trustScore": 1,
+    "createdAt": "2026-09-12T12:43:54.752Z",
+    "verificationStatus": "PENDING",
+    "nicNumber": "199483720191V",
+    "nicDocumentUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+    "officialDetails": "dd"
   }
 ]

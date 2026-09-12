@@ -15,6 +15,22 @@
       "nicNumber": "199483720191V",
       "nicDocumentUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
       "officialDetails": "CITIZEN Registered Personnel"
+    },
+    {
+      "id": "usr-council_officer-1789217034752",
+      "username": "sanodyav@gmail.com",
+      "passwordHash": "$2b$10$.yy9YMuNC.O/M4aq.FYJZufC84hj8Vjcxc1I2PjdhHNuaBrHZeVzu",
+      "fullName": "sanooo",
+      "email": "sanodya@gmail.com",
+      "role": "COUNCIL_OFFICER",
+      "phone": "+94 77 123 4567",
+      "wardId": "ward-01",
+      "trustScore": 1,
+      "createdAt": "2026-09-12T12:43:54.752Z",
+      "verificationStatus": "PENDING",
+      "nicNumber": "199483720191V",
+      "nicDocumentUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+      "officialDetails": "dd"
     }
   ],
   "cases": [
@@ -841,6 +857,417 @@
           "COUNCIL_TICKET"
         ]
       }
+    },
+    {
+      "id": "case-1789218015142",
+      "reportId": "rep-1789218008996",
+      "source": "CITIZEN",
+      "createdAt": "2026-09-12T13:00:15.145Z",
+      "hazardType": "FLOOD",
+      "status": "VERIFIED",
+      "location": {
+        "lat": 6.958,
+        "lng": 79.891,
+        "roadName": "Kelani Flood Embankment Road (A1)",
+        "roadHierarchy": "ARTERIAL_A1",
+        "wardId": "ward-02",
+        "wardName": "Kelani River Basin (Ward 02)"
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80",
+      "description": "Severe water level rise, 3ft deep across road curb",
+      "reporterName": "Priyani Fernando",
+      "reporterPhone": "+94 77 555 1234",
+      "reporterUserId": "eval-citizen-01",
+      "roadClosed": true,
+      "broadcastSent": true,
+      "verdictData": {
+        "caseId": "case-1789218015142",
+        "verdict": "CONFIRMED",
+        "confidenceScore": 0.88,
+        "urgency": "CRITICAL",
+        "primaryHazard": "FLOOD",
+        "checks": {
+          "image": {
+            "checkName": "IMAGE_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.96,
+            "summary": "Visual analysis confirmed severe flood inundation with estimated water depth >= 0.75m; stalled transport detected.",
+            "details": {
+              "detectedHazard": "FLOOD",
+              "visualSeverity": "SEVERE",
+              "visualConfidence": 0.96,
+              "detectedObjects": [
+                "flood",
+                "road_asphalt",
+                "infrastructure_hazard"
+              ],
+              "isAuthenticDisasterPhoto": true,
+              "aiEngineUsed": "NVIDIA NIM Multimodal Vision AI"
+            }
+          },
+          "weather": {
+            "checkName": "WEATHER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": true,
+            "score": 0.98,
+            "summary": "Extreme weather corroborated: Ward rainfall is 58.0 mm/h (exceeds 30 mm/h limit) and river basin level is 88.5%. [Live Open-Meteo Feed: 29.2°C, Cloud: 92%]",
+            "details": {
+              "maxRainfallRateMmH": 58,
+              "maxRiverCapacityPct": 88.5,
+              "accumulated3hMm": 112.5,
+              "ruleMatched": "CONCURRENT_EXTREME_RAINFALL_AND_RIVER_CREST",
+              "stationCountEvaluated": 1,
+              "liveWeatherApi": {
+                "temperatureC": 29.2,
+                "precipitationMm": 0,
+                "rainMm": 0,
+                "cloudCoverPct": 92,
+                "windSpeedKmh": 12.5,
+                "isRaining": false,
+                "fetchedAt": "2026-09-12T13:00:12.277Z",
+                "source": "OPEN_METEO_LIVE_API"
+              }
+            }
+          },
+          "cluster": {
+            "checkName": "CLUSTER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": false,
+            "score": 0.5,
+            "summary": "Single isolated incident report (no corroborating reports within 200m in last 3h).",
+            "details": {
+              "reportsInCluster": 1,
+              "corroboratingReportIds": [],
+              "searchRadiusMeters": 200,
+              "timeWindowHours": 3
+            }
+          },
+          "location": {
+            "checkName": "LOCATION_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.94,
+            "summary": "High-confidence geographic match: Coordinates align precisely with designated arterial transit corridor (Kelani Flood Embankment Road (A1)).",
+            "details": {
+              "geographicConfidence": "HIGH",
+              "verifiedWard": "Kelani River Basin (Ward 02)",
+              "verifiedRoad": "Kelani Flood Embankment Road (A1)",
+              "roadHierarchy": "ARTERIAL_A1",
+              "reporterTrustScore": 0.85,
+              "elevationRiskFactor": "LOW_LYING_VULNERABLE",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          },
+          "risk": {
+            "checkName": "RISK_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 1,
+            "summary": "Impact evaluation rated CRITICAL (100/100) on Kelani Flood Embankment Road (A1) due to Key arterial road: high traffic volume and vital emergency corridor.",
+            "details": {
+              "urgency": "CRITICAL",
+              "riskScore": 1,
+              "impactFactors": [
+                "Key arterial road: high traffic volume and vital emergency corridor",
+                "Active life-safety distress: 4 person(s) stranded requiring urgent evacuation"
+              ],
+              "arteryCriticality": "ARTERIAL_A1",
+              "lifeSafetyImplication": "CRITICAL_RESCUE_REQUIRED",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          }
+        },
+        "reasoningChain": [
+          "Corroborated by high multi-signal confidence score (88%), meeting threshold >= 70%.",
+          "Visual AI confirmed authentic hazard signature for FLOOD (96% visual confidence).",
+          "System weather telemetry actively corroborates storm load in Kelani River Basin (Ward 02).",
+          "Location AI confirms scene matches road topography on Kelani Flood Embankment Road (A1)."
+        ],
+        "recommendedActions": [
+          "Issue immediate road closure on Kelani Flood Embankment Road (A1)",
+          "Broadcast localized area alert to residents of Kelani River Basin (Ward 02)",
+          "Dispatch council emergency crew (De-watering pump squad)",
+          "Initiate immediate rescue dispatch for 4 stranded individual(s)"
+        ],
+        "triggeredOutcomes": [
+          "PUBLISHED",
+          "COUNCIL_TICKET",
+          "AREA_ALERT"
+        ]
+      },
+      "nearbyVerifications": [
+        {
+          "userId": "citizen-nearby-99",
+          "confirmed": true,
+          "timestamp": "2026-09-12T13:00:45.092Z",
+          "note": "Water rising up to shopfronts."
+        }
+      ],
+      "ticketId": "ticket-1789218019751"
+    },
+    {
+      "id": "case-1789218036229",
+      "reportId": "rep-1789218028368",
+      "source": "CITIZEN",
+      "createdAt": "2026-09-12T13:00:36.229Z",
+      "hazardType": "FLOOD",
+      "status": "REJECTED",
+      "location": {
+        "lat": 6.93,
+        "lng": 79.85,
+        "roadName": "Chatham St",
+        "roadHierarchy": "LOCAL_STREET",
+        "wardId": "ward-01",
+        "wardName": "Colombo Central & Fort (Ward 01)"
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80",
+      "description": "Cat meme joke photo test",
+      "reporterName": "Troll User",
+      "reporterPhone": "",
+      "reporterUserId": "spammer-01",
+      "roadClosed": false,
+      "broadcastSent": false,
+      "verdictData": {
+        "caseId": "case-1789218036229",
+        "verdict": "REJECTED",
+        "confidenceScore": 0.2,
+        "urgency": "LOW",
+        "primaryHazard": "FLOOD",
+        "checks": {
+          "image": {
+            "checkName": "IMAGE_AI",
+            "engine": "AI",
+            "passed": false,
+            "score": 0.08,
+            "summary": "Photo rejected: Visual analysis indicates non-disaster / irrelevant image content.",
+            "details": {
+              "detectedHazard": "NONE",
+              "visualConfidence": 0.08,
+              "visualArtifactsDetected": [
+                "indoor_lighting",
+                "non_infrastructure",
+                "irrelevant_subject"
+              ],
+              "isAuthenticDisasterPhoto": false,
+              "aiEngineUsed": "NVIDIA NIM Vision Multimodal"
+            }
+          },
+          "weather": {
+            "checkName": "WEATHER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": true,
+            "score": 0.88,
+            "summary": "Precipitation alert: Active rainfall rate is 42.5 mm/h with 68.0 mm 3-hour accumulation. [Live Open-Meteo Feed: 29.2°C, Cloud: 92%]",
+            "details": {
+              "maxRainfallRateMmH": 42.5,
+              "maxRiverCapacityPct": 0,
+              "accumulated3hMm": 68,
+              "ruleMatched": "HEAVY_PRECIPITATION_BURST",
+              "stationCountEvaluated": 1,
+              "liveWeatherApi": {
+                "temperatureC": 29.2,
+                "precipitationMm": 0,
+                "rainMm": 0,
+                "cloudCoverPct": 92,
+                "windSpeedKmh": 12.5,
+                "isRaining": false,
+                "fetchedAt": "2026-09-12T13:00:12.277Z",
+                "source": "OPEN_METEO_LIVE_API"
+              }
+            }
+          },
+          "cluster": {
+            "checkName": "CLUSTER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": false,
+            "score": 0.5,
+            "summary": "Single isolated incident report (no corroborating reports within 200m in last 3h).",
+            "details": {
+              "reportsInCluster": 1,
+              "corroboratingReportIds": [],
+              "searchRadiusMeters": 200,
+              "timeWindowHours": 3
+            }
+          },
+          "location": {
+            "checkName": "LOCATION_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.88,
+            "summary": "Geographic and scene analysis validates report context for Chatham St in Colombo Central & Fort (Ward 01).",
+            "details": {
+              "geographicConfidence": "HIGH",
+              "verifiedWard": "Colombo Central & Fort (Ward 01)",
+              "verifiedRoad": "Chatham St",
+              "roadHierarchy": "LOCAL_STREET",
+              "reporterTrustScore": 0.85,
+              "elevationRiskFactor": "STANDARD",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          },
+          "risk": {
+            "checkName": "RISK_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.5,
+            "summary": "Impact evaluation rated MEDIUM (50/100) on Chatham St due to standard municipal impact.",
+            "details": {
+              "urgency": "MEDIUM",
+              "riskScore": 0.5,
+              "impactFactors": [],
+              "arteryCriticality": "LOCAL_STREET",
+              "lifeSafetyImplication": "NO_DIRECT_RESCUE_FLAGGED",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          }
+        },
+        "reasoningChain": [
+          "Image failed validation: Photo content identified as non-hazard or irrelevant.",
+          "Weighted confidence (20%) is below acceptable disaster verification standards."
+        ],
+        "recommendedActions": [
+          "Discard report and notify user of invalid submission"
+        ],
+        "triggeredOutcomes": []
+      },
+      "nearbyVerifications": []
+    },
+    {
+      "id": "case-auto-1789218054769",
+      "reportId": "sensor-auto-rep-1789218043055",
+      "source": "SENSOR_AUTO",
+      "createdAt": "2026-09-12T13:00:54.769Z",
+      "hazardType": "FLOOD",
+      "status": "VERIFIED",
+      "location": {
+        "lat": 6.961,
+        "lng": 79.894,
+        "roadName": "Kelani Flood Embankment Road",
+        "roadHierarchy": "ARTERIAL_A1",
+        "wardId": "ward-02",
+        "wardName": "Kelani River Basin"
+      },
+      "imageUrl": "https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80",
+      "description": "AUTOMATED SENSOR TRIGGER: River ultrasonic sensor exceeded 90% threshold. River overflow imminent.",
+      "roadClosed": true,
+      "broadcastSent": true,
+      "verdictData": {
+        "caseId": "case-auto-1789218054769",
+        "verdict": "CONFIRMED",
+        "confidenceScore": 0.88,
+        "urgency": "HIGH",
+        "primaryHazard": "FLOOD",
+        "checks": {
+          "image": {
+            "checkName": "IMAGE_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.9,
+            "summary": "Visual analysis confirmed surface water accumulation spanning active carriage-way.",
+            "details": {
+              "detectedHazard": "FLOOD",
+              "visualSeverity": "MODERATE",
+              "visualConfidence": 0.9,
+              "detectedObjects": [
+                "flood",
+                "road_asphalt",
+                "infrastructure_hazard"
+              ],
+              "isAuthenticDisasterPhoto": true,
+              "aiEngineUsed": "NVIDIA NIM Multimodal Vision AI"
+            }
+          },
+          "weather": {
+            "checkName": "WEATHER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": true,
+            "score": 0.98,
+            "summary": "Extreme weather corroborated: Ward rainfall is 88.0 mm/h (exceeds 30 mm/h limit) and river basin level is 94.0%. [Live Open-Meteo Feed: 29.2°C, Cloud: 92%]",
+            "details": {
+              "maxRainfallRateMmH": 88,
+              "maxRiverCapacityPct": 94,
+              "accumulated3hMm": 112.5,
+              "ruleMatched": "CONCURRENT_EXTREME_RAINFALL_AND_RIVER_CREST",
+              "stationCountEvaluated": 1,
+              "liveWeatherApi": {
+                "temperatureC": 29.2,
+                "precipitationMm": 0,
+                "rainMm": 0,
+                "cloudCoverPct": 92,
+                "windSpeedKmh": 12.5,
+                "isRaining": false,
+                "fetchedAt": "2026-09-12T13:00:12.277Z",
+                "source": "OPEN_METEO_LIVE_API"
+              }
+            }
+          },
+          "cluster": {
+            "checkName": "CLUSTER_SYSTEM",
+            "engine": "SYSTEM",
+            "passed": false,
+            "score": 0.5,
+            "summary": "Single isolated incident report (no corroborating reports within 200m in last 3h).",
+            "details": {
+              "reportsInCluster": 1,
+              "corroboratingReportIds": [],
+              "searchRadiusMeters": 200,
+              "timeWindowHours": 3
+            }
+          },
+          "location": {
+            "checkName": "LOCATION_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.94,
+            "summary": "High-confidence geographic match: Coordinates align precisely with designated arterial transit corridor (Kelani Flood Embankment Road).",
+            "details": {
+              "geographicConfidence": "HIGH",
+              "verifiedWard": "Kelani River Basin",
+              "verifiedRoad": "Kelani Flood Embankment Road",
+              "roadHierarchy": "ARTERIAL_A1",
+              "reporterTrustScore": 1,
+              "elevationRiskFactor": "LOW_LYING_VULNERABLE",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          },
+          "risk": {
+            "checkName": "RISK_AI",
+            "engine": "AI",
+            "passed": true,
+            "score": 0.75,
+            "summary": "Impact evaluation rated HIGH (75/100) on Kelani Flood Embankment Road due to Key arterial road: high traffic volume and vital emergency corridor.",
+            "details": {
+              "urgency": "HIGH",
+              "riskScore": 0.75,
+              "impactFactors": [
+                "Key arterial road: high traffic volume and vital emergency corridor"
+              ],
+              "arteryCriticality": "ARTERIAL_A1",
+              "lifeSafetyImplication": "NO_DIRECT_RESCUE_FLAGGED",
+              "aiEngineUsed": "NVIDIA NIM"
+            }
+          }
+        },
+        "reasoningChain": [
+          "Corroborated by high multi-signal confidence score (88%), meeting threshold >= 70%.",
+          "Visual AI confirmed authentic hazard signature for FLOOD (90% visual confidence).",
+          "System weather telemetry actively corroborates storm load in Kelani River Basin.",
+          "Location AI confirms scene matches road topography on Kelani Flood Embankment Road."
+        ],
+        "recommendedActions": [
+          "Issue immediate road closure on Kelani Flood Embankment Road",
+          "Broadcast localized area alert to residents of Kelani River Basin",
+          "Dispatch council emergency crew (De-watering pump squad)"
+        ],
+        "triggeredOutcomes": [
+          "PUBLISHED",
+          "COUNCIL_TICKET",
+          "AREA_ALERT"
+        ]
+      },
+      "nearbyVerifications": [],
+      "ticketId": "ticket-1789218060475"
     }
   ],
   "tickets": [
@@ -983,6 +1410,65 @@
       "hazardType": "FALLEN_TREE",
       "urgency": "HIGH",
       "status": "OPEN"
+    },
+    {
+      "id": "ticket-1789218019751",
+      "caseId": "case-1789218015142",
+      "createdAt": "2026-09-12T13:00:19.751Z",
+      "wardId": "ward-02",
+      "hazardType": "FLOOD",
+      "urgency": "CRITICAL",
+      "status": "RESOLVED",
+      "assignedCrewId": "crew-01",
+      "assignedCrewName": "Rapid Flood Pump Unit 01 (De-watering)",
+      "detourRoute": [
+        {
+          "lat": 6.94,
+          "lng": 79.88,
+          "instruction": "Depart from origin location on designated safe corridor."
+        },
+        {
+          "lat": 6.949,
+          "lng": 79.88550000000001,
+          "instruction": "Continue straight along open arterial transit road."
+        },
+        {
+          "lat": 6.958,
+          "lng": 79.891,
+          "instruction": "Arrive at destination safely."
+        }
+      ],
+      "resolutionPhotoUrl": "https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?auto=format&fit=crop&w=800&q=80",
+      "resolvedAt": "2026-09-12T13:00:49.352Z",
+      "resolutionNotes": "Water pumped, mud cleared, road surface safe for transit."
+    },
+    {
+      "id": "ticket-1789218060475",
+      "caseId": "case-auto-1789218054769",
+      "createdAt": "2026-09-12T13:01:00.475Z",
+      "wardId": "ward-02",
+      "hazardType": "FLOOD",
+      "urgency": "HIGH",
+      "status": "DISPATCHED",
+      "assignedCrewId": "crew-01",
+      "assignedCrewName": "Rapid Flood Pump Unit 01 (De-watering)",
+      "detourRoute": [
+        {
+          "lat": 6.94,
+          "lng": 79.88,
+          "instruction": "Depart from origin location on designated safe corridor."
+        },
+        {
+          "lat": 6.9505,
+          "lng": 79.887,
+          "instruction": "Continue straight along open arterial transit road."
+        },
+        {
+          "lat": 6.961,
+          "lng": 79.894,
+          "instruction": "Arrive at destination safely."
+        }
+      ]
     }
   ],
   "shelters": [
@@ -1028,11 +1514,11 @@
         "wardName": "Kelani River Basin"
       },
       "totalCapacity": 400,
-      "currentOccupancy": 360,
+      "currentOccupancy": 368,
       "isOpen": true,
       "supplies": {
-        "foodPacks": 120,
-        "waterLitres": 800,
+        "foodPacks": 104,
+        "waterLitres": 776,
         "medicalKits": 12,
         "blankets": 150
       },
@@ -1139,7 +1625,7 @@
       },
       "status": "DISPATCHED",
       "contactPhone": "+94 77 123 4561",
-      "assignedTicketId": "ticket-1789209981606"
+      "assignedTicketId": "ticket-1789218060475"
     },
     {
       "id": "crew-02",
@@ -1149,9 +1635,8 @@
         "lat": 6.931,
         "lng": 79.855
       },
-      "status": "DISPATCHED",
-      "contactPhone": "+94 77 123 4562",
-      "assignedTicketId": "ticket-1789210588251"
+      "status": "AVAILABLE",
+      "contactPhone": "+94 77 123 4562"
     },
     {
       "id": "crew-03",
@@ -1209,8 +1694,60 @@
         "wardName": "Kelani River Basin"
       },
       "urgency": "HIGH",
-      "status": "QUEUED",
-      "createdAt": "2026-09-12T10:09:34.302Z"
+      "status": "ASSIGNED",
+      "createdAt": "2026-09-12T12:11:35.217Z",
+      "matchedShelterId": "shelter-02",
+      "safeRoute": [
+        {
+          "lat": 6.958,
+          "lng": 79.891
+        },
+        {
+          "lat": 6.9615,
+          "lng": 79.8895
+        },
+        {
+          "lat": 6.965,
+          "lng": 79.888
+        }
+      ]
+    },
+    {
+      "id": "relief-1789218024544",
+      "caseId": "case-1789218015142",
+      "reportId": "rep-1789218008996",
+      "citizenName": "Priyani Fernando",
+      "citizenPhone": "+94 77 555 1234",
+      "householdCount": 4,
+      "specialNeeds": [
+        "Elderly grandmother"
+      ],
+      "location": {
+        "lat": 6.958,
+        "lng": 79.891,
+        "roadName": "Kelani Flood Embankment Road (A1)",
+        "roadHierarchy": "ARTERIAL_A1",
+        "wardId": "ward-02",
+        "wardName": "Kelani River Basin (Ward 02)"
+      },
+      "urgency": "CRITICAL",
+      "status": "ASSIGNED",
+      "createdAt": "2026-09-12T13:00:24.544Z",
+      "matchedShelterId": "shelter-02",
+      "safeRoute": [
+        {
+          "lat": 6.958,
+          "lng": 79.891
+        },
+        {
+          "lat": 6.9615,
+          "lng": 79.8895
+        },
+        {
+          "lat": 6.965,
+          "lng": 79.888
+        }
+      ]
     }
   ],
   "sensors": [
@@ -1249,6 +1786,118 @@
         "value": 7.2
       },
       "unit": "m"
+    },
+    {
+      "stationId": "sensor-rg-01",
+      "stationName": "Fort Harbour Rain Gauge",
+      "stationType": "RAIN_GAUGE",
+      "wardId": "ward-01",
+      "lat": 6.938,
+      "lng": 79.845,
+      "rainfallRateMmH": 65,
+      "rainfallAccumulated3h": 68,
+      "riverLevelMeters": 5.07,
+      "riverCapacityPct": 78,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T13:00:37.586Z"
+    },
+    {
+      "stationId": "sensor-rl-02",
+      "stationName": "Kelani Ganga Bridge Ultrasonic Sensor",
+      "stationType": "RIVER_LEVEL",
+      "wardId": "ward-02",
+      "lat": 6.962,
+      "lng": 79.892,
+      "rainfallRateMmH": 88,
+      "rainfallAccumulated3h": 112.5,
+      "riverLevelMeters": 6.109999999999999,
+      "riverCapacityPct": 94,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T13:00:38.727Z"
+    },
+    {
+      "stationId": "sensor-rg-03",
+      "stationName": "Kolonnawa Marshland Station",
+      "stationType": "RAIN_GAUGE",
+      "wardId": "ward-03",
+      "lat": 6.928,
+      "lng": 79.898,
+      "rainfallRateMmH": 72,
+      "rainfallAccumulated3h": 84,
+      "riverLevelMeters": 5.59,
+      "riverCapacityPct": 86,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T13:00:39.673Z"
+    },
+    {
+      "stationId": "sensor-rl-04",
+      "stationName": "Kaduwela Bridge River Depth Monitor",
+      "stationType": "RIVER_LEVEL",
+      "wardId": "ward-04",
+      "lat": 6.936,
+      "lng": 79.978,
+      "rainfallRateMmH": 95,
+      "rainfallAccumulated3h": 130,
+      "riverLevelMeters": 6.24,
+      "riverCapacityPct": 96,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T13:00:40.271Z"
+    },
+    {
+      "stationId": "sensor-rg-05",
+      "stationName": "Wellawatte Canal Tidal Gauge",
+      "stationType": "RAIN_GAUGE",
+      "wardId": "ward-05",
+      "lat": 6.872,
+      "lng": 79.862,
+      "rainfallRateMmH": 45,
+      "rainfallAccumulated3h": 38,
+      "riverLevelMeters": 4.42,
+      "riverCapacityPct": 68,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T13:00:42.516Z"
+    },
+    {
+      "stationId": "sensor-rl-06",
+      "stationName": "Attanagalu Oya Gampaha Station",
+      "stationType": "RIVER_LEVEL",
+      "wardId": "ward-06",
+      "lat": 7.095,
+      "lng": 79.995,
+      "rainfallRateMmH": 52,
+      "rainfallAccumulated3h": 96,
+      "riverLevelMeters": 4.8,
+      "riverCapacityPct": 84,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T12:36:30.407Z"
+    },
+    {
+      "stationId": "sensor-rl-07",
+      "stationName": "Kalu Ganga Kalutara Estuary Monitor",
+      "stationType": "RIVER_LEVEL",
+      "wardId": "ward-07",
+      "lat": 6.588,
+      "lng": 79.965,
+      "rainfallRateMmH": 45,
+      "rainfallAccumulated3h": 82,
+      "riverLevelMeters": 4.2,
+      "riverCapacityPct": 80,
+      "status": "WARNING",
+      "updatedAt": "2026-09-12T12:36:30.407Z"
+    },
+    {
+      "stationId": "sensor-rl-08",
+      "stationName": "Ratnapura Kalu Ganga Flood Sensor",
+      "stationType": "RIVER_LEVEL",
+      "wardId": "ward-08",
+      "lat": 6.685,
+      "lng": 80.405,
+      "rainfallRateMmH": 72,
+      "rainfallAccumulated3h": 145,
+      "riverLevelMeters": 7.4,
+      "riverCapacityPct": 96,
+      "status": "DANGER",
+      "updatedAt": "2026-09-12T12:36:30.407Z"
     }
   ],
   "ai_tuning_logs": [
@@ -1271,9 +1920,30 @@
       "originalAiConfidence": 0.2,
       "officerNotes": "Officer manual correction applied",
       "promptAdjustment": "System tuning: Increased weight on citizen image clarity (+5%) and lowered conservative weather thresholds for local micro-climate flash zones."
+    },
+    {
+      "id": "tune-1789218054095",
+      "timestamp": "2026-09-12T13:00:54.095Z",
+      "caseId": "case-1789218015142",
+      "officerAction": "AGREED",
+      "originalAiVerdict": "CONFIRMED",
+      "originalAiConfidence": 0.88,
+      "officerNotes": "Field crew verified and resolved hazard with photographic proof.",
+      "promptAdjustment": "Standard baseline weights maintained."
+    },
+    {
+      "id": "tune-1789218069727",
+      "timestamp": "2026-09-12T13:01:09.727Z",
+      "caseId": "case-1789218015142",
+      "officerAction": "AGREED",
+      "originalAiVerdict": "CONFIRMED",
+      "originalAiConfidence": 0.88,
+      "officerNotes": "Officer confirms diagnosis was accurate; field crew verified.",
+      "promptAdjustment": "Standard baseline weights maintained."
     }
   ],
   "banned_users": [
-    "spammer-demo-01"
+    "spammer-demo-01",
+    "spammer-01"
   ]
 }

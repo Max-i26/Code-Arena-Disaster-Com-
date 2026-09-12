@@ -119,6 +119,7 @@ class StateStore {
 
       // Sync with SQL Database Engine
       this.cases.forEach(c => dbService.saveCase(c));
+      this.reports.forEach(r => dbService.saveReport(r));
       this.tickets.forEach(t => dbService.saveTicket(t));
       this.shelters.forEach(s => dbService.saveShelter(s));
       this.fieldCrews.forEach(fc => dbService.saveFieldCrew(fc));
@@ -286,6 +287,7 @@ class StateStore {
     if (idx >= 0) {
       const deleted = this.cases.splice(idx, 1)[0];
       this.savePersistentState();
+      dbService.deleteCase(id);
       this.emit('CASE_DELETED', deleted);
       return true;
     }
@@ -334,6 +336,7 @@ class StateStore {
     if (idx >= 0) {
       const deleted = this.shelters.splice(idx, 1)[0];
       this.savePersistentState();
+      dbService.deleteShelter(id);
       this.emit('SHELTER_DELETED', deleted);
       return true;
     }
@@ -374,6 +377,7 @@ class StateStore {
     if (idx >= 0) {
       const deleted = this.fieldCrews.splice(idx, 1)[0];
       this.savePersistentState();
+      dbService.deleteFieldCrew(id);
       this.emit('FIELD_CREW_DELETED', deleted);
       return true;
     }
@@ -412,6 +416,7 @@ class StateStore {
     if (idx >= 0) {
       const deleted = this.tickets.splice(idx, 1)[0];
       this.savePersistentState();
+      dbService.deleteTicketByCaseId(caseId);
       this.emit('TICKET_DELETED', deleted);
       return true;
     }
@@ -425,6 +430,7 @@ class StateStore {
 
   public addReliefRequest(request: ReliefRequest): ReliefRequest {
     this.reliefRequests.unshift(request);
+    this.savePersistentState();
     this.emit('RELIEF_REQUEST_CREATED', request);
     return request;
   }
@@ -433,6 +439,7 @@ class StateStore {
     const idx = this.reliefRequests.findIndex(r => r.id === id);
     if (idx >= 0) {
       this.reliefRequests[idx] = { ...this.reliefRequests[idx], ...updates };
+      this.savePersistentState();
       this.emit('RELIEF_REQUEST_UPDATED', this.reliefRequests[idx]);
       return this.reliefRequests[idx];
     }
