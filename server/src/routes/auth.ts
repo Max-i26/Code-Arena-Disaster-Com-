@@ -48,8 +48,7 @@ authRouter.post('/register', async (req, res) => {
 
     const hash = await bcrypt.hash(password, 10);
     const userId = `usr-${role.toLowerCase()}-${Date.now()}`;
-    const hasNicDoc = Boolean(nicDocumentUrl && nicDocumentUrl.trim().length > 0);
-    const verificationStatus = (isOfficialRole || hasNicDoc) ? 'PENDING' : 'APPROVED';
+    const verificationStatus = role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING';
 
     const newUser: DbUser = {
       id: userId,
@@ -81,9 +80,7 @@ authRouter.post('/register', async (req, res) => {
 
     res.json({
       success: true,
-      message: (isOfficialRole || hasNicDoc)
-        ? 'Account registered successfully! Verification status: PENDING. System Administrator must review your uploaded photo proof and credentials before portal access is activated.'
-        : 'Citizen account created successfully!',
+      message: 'Account registered successfully! Verification status: PENDING. System Administrator must review and approve your registration before portal access is activated.',
       token,
       user: userPayload,
       dbStatus: dbService.getDbStatus(),
@@ -114,8 +111,20 @@ authRouter.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password.' });
     }
 
+    if (user.verificationStatus === 'PENDING') {
+      return res.status(403).json({
+        error: 'Access Pending Admin Approval: Your account registration is currently PENDING System Administrator verification and approval. Please wait for an Admin to activate your account.'
+      });
+    }
+
     if (user.verificationStatus === 'REJECTED') {
       return res.status(403).json({ error: 'Verification Rejected: Your official registration was not approved by the system administrator.' });
+    }
+
+    if (user.verificationStatus !== 'APPROVED') {
+      return res.status(403).json({
+        error: 'Account Not Activated: Your account requires System Administrator approval.'
+      });
     }
 
     // Generate token

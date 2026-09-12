@@ -95,7 +95,7 @@ class DatabaseService {
           for (const r of data.relief_requests) if (r && r.id) this.tables.relief_requests.set(r.id, r);
         }
         if (data.sensors && Array.isArray(data.sensors)) {
-          for (const s of data.sensors) if (s && s.id) this.tables.sensors.set(s.id, s);
+          for (const s of data.sensors) if (s && (s.id || s.stationId)) this.tables.sensors.set(s.id || s.stationId, s);
         }
         if (data.ai_tuning_logs && Array.isArray(data.ai_tuning_logs)) {
           for (const l of data.ai_tuning_logs) if (l && l.id) this.tables.ai_tuning_logs.set(l.id, l);
@@ -178,8 +178,8 @@ class DatabaseService {
           \`created_at\` DATETIME NOT NULL,
           \`verification_status\` VARCHAR(32) DEFAULT 'APPROVED',
           \`nic_number\` VARCHAR(64),
-          \`nic_document_url\` TEXT,
-          \`official_details\` TEXT
+          \`nic_document_url\` LONGTEXT,
+          \`official_details\` LONGTEXT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
@@ -205,8 +205,8 @@ class DatabaseService {
           \`status\` VARCHAR(64),
           \`road_name\` VARCHAR(255),
           \`ward_id\` VARCHAR(64),
-          \`image_url\` TEXT,
-          \`description\` TEXT,
+          \`image_url\` LONGTEXT,
+          \`description\` LONGTEXT,
           \`road_closed\` BOOLEAN DEFAULT FALSE,
           \`urgency\` VARCHAR(32),
           \`confidence_score\` FLOAT,
@@ -236,8 +236,8 @@ class DatabaseService {
           \`status\` VARCHAR(32),
           \`assigned_crew_id\` VARCHAR(128),
           \`assigned_crew_name\` VARCHAR(128),
-          \`resolution_photo_url\` TEXT,
-          \`resolution_notes\` TEXT
+          \`resolution_photo_url\` LONGTEXT,
+          \`resolution_notes\` LONGTEXT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
@@ -278,10 +278,55 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
+      // 7. Table: sensors
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`sensors\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`type\` VARCHAR(64),
+          \`ward_id\` VARCHAR(64),
+          \`location_name\` VARCHAR(255),
+          \`status\` VARCHAR(32),
+          \`last_value\` FLOAT,
+          \`unit\` VARCHAR(32)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // 8. Table: ai_tuning_logs
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`ai_tuning_logs\` (
+          \`id\` VARCHAR(128) PRIMARY KEY,
+          \`case_id\` VARCHAR(128),
+          \`officer_id\` VARCHAR(128),
+          \`officer_action\` VARCHAR(64),
+          \`confidence_score\` FLOAT,
+          \`created_at\` DATETIME
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // 9. Table: banned_users
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS \`banned_users\` (
+          \`user_id\` VARCHAR(128) PRIMARY KEY,
+          \`banned_at\` DATETIME
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Schema Migration for existing databases: ensure image/large text columns are LONGTEXT
+      try {
+        await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `nic_document_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `official_details` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `image_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `description` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_photo_url` LONGTEXT;');
+        await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_notes` LONGTEXT;');
+      } catch (alterErr: any) {
+        console.warn('[ResQCity SQL DB] Schema alter warning (ignorable if columns up to date):', alterErr.message);
+      }
+
       this.isConnectedToMysql = true;
       console.log('[ResQCity SQL DB] Successfully connected to MySQL Engine (localhost:3306 / resqcity_db)');
 
-      // Sync embedded table records into MySQL
+      // Sync all embedded table records into MySQL
       for (const u of this.tables.users.values()) {
         try {
           await this.pool.query(
@@ -306,6 +351,32 @@ class DatabaseService {
           );
         } catch (e) { }
       }
+
+      for (const c of this.tables.cases.values()) {
+        this.saveCase(c);
+      }
+      for (const t of this.tables.tickets.values()) {
+        this.saveTicket(t);
+      }
+      for (const s of this.tables.shelters.values()) {
+        this.saveShelter(s);
+      }
+      for (const fc of this.tables.field_crews.values()) {
+        this.saveFieldCrew(fc);
+      }
+      for (const r of this.tables.relief_requests.values()) {
+        this.saveReliefRequest(r);
+      }
+      for (const s of this.tables.sensors.values()) {
+        this.saveSensor(s);
+      }
+      for (const l of this.tables.ai_tuning_logs.values()) {
+        this.saveAiLog(l);
+      }
+      for (const u of this.tables.banned_users) {
+        this.saveBannedUser(u);
+      }
+
     } catch (err: any) {
       console.warn('[ResQCity SQL DB] MySQL Engine offline. Using Embedded SQL Engine (resqcity_sqlite_db.json). Details:', err.message);
       this.isConnectedToMysql = false;
@@ -331,7 +402,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '199083740192V',
         officialDetails: 'CMC Command Division — Senior Officer ID #8841',
       },
@@ -359,7 +430,7 @@ class DatabaseService {
         wardId: 'ward-02',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '198883740991V',
         officialDetails: 'Rapid Pump Squad 01 (Water Pumping & Drainage)',
       },
@@ -374,7 +445,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
-        verificationStatus: 'APPROVED',
+        verificationStatus: 'PENDING',
         nicNumber: '199583740221V',
         officialDetails: 'Viharamahadevi Park Primary Relief Center',
       },
@@ -467,16 +538,47 @@ class DatabaseService {
     return null;
   }
 
+  public async getAllUsers(): Promise<DbUser[]> {
+    const allUsers: DbUser[] = [];
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        const [rows]: any = await this.pool.query('SELECT * FROM `users` ORDER BY `created_at` DESC');
+        if (rows) {
+          for (const r of rows) {
+            allUsers.push({
+              id: r.id,
+              username: r.username,
+              passwordHash: r.password_hash,
+              fullName: r.full_name,
+              email: r.email,
+              role: r.role as UserRole,
+              phone: r.phone,
+              wardId: r.ward_id,
+              trustScore: r.trust_score,
+              createdAt: r.created_at,
+              verificationStatus: r.verification_status || 'PENDING',
+              nicNumber: r.nic_number,
+              nicDocumentUrl: r.nic_document_url,
+              officialDetails: r.official_details,
+            });
+          }
+          return allUsers;
+        }
+      } catch (err) {
+        console.error('MySQL query error:', err);
+      }
+    }
+
+    return Array.from(this.tables.users.values());
+  }
+
   public async createUser(user: DbUser): Promise<DbUser> {
     const cleanUsername = user.username.toLowerCase().trim();
     user.username = cleanUsername;
     
-    // Set pending status if NIC image is provided or role is official
-    const hasNicDoc = Boolean(user.nicDocumentUrl && user.nicDocumentUrl.trim().length > 0);
-    const isOfficialRole = user.role === 'COUNCIL_OFFICER' || user.role === 'FIELD_CREW' || user.role === 'RELIEF_DESK';
-    
+    // All registrations require Admin approval except System Admins
     if (user.verificationStatus === undefined) {
-      user.verificationStatus = (isOfficialRole || hasNicDoc) ? 'PENDING' : 'APPROVED';
+      user.verificationStatus = (user.role === 'SYSTEM_ADMIN') ? 'APPROVED' : 'PENDING';
     }
 
     if (this.isConnectedToMysql && this.pool) {
@@ -629,21 +731,89 @@ class DatabaseService {
   public saveShelter(s: Shelter) {
     this.tables.shelters.set(s.id, s);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`shelters\` (\`id\`, \`name\`, \`ward_id\`, \`total_capacity\`, \`occupied\`, \`contact_phone\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`total_capacity\` = VALUES(\`total_capacity\`), \`occupied\` = VALUES(\`occupied\`), \`contact_phone\` = VALUES(\`contact_phone\`)`,
+        [s.id, s.name, s.wardId, s.totalCapacity, s.currentOccupancy, s.contactPhone || '']
+      ).catch(() => {});
+    }
   }
 
   public saveFieldCrew(fc: FieldCrew) {
     this.tables.field_crews.set(fc.id, fc);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`field_crews\` (\`id\`, \`name\`, \`ward_id\`, \`specialization\`, \`status\`, \`contact_phone\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`status\` = VALUES(\`status\`), \`contact_phone\` = VALUES(\`contact_phone\`)`,
+        [fc.id, fc.name, fc.wardId, fc.specialization, fc.status, fc.contactPhone || '']
+      ).catch(() => {});
+    }
   }
 
   public saveReliefRequest(req: ReliefRequest) {
     this.tables.relief_requests.set(req.id, req);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`relief_requests\` (\`id\`, \`case_id\`, \`citizen_name\`, \`citizen_phone\`, \`household_count\`, \`status\`, \`created_at\`)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`)`,
+        [req.id, req.caseId || '', req.citizenName, req.citizenPhone, req.householdCount, req.status, this.toMysqlDatetime(req.createdAt)]
+      ).catch(() => {});
+    }
+  }
+
+  public saveSensor(sensor: SensorTelemetry) {
+    const sensorId = sensor.id || sensor.stationId;
+    this.tables.sensors.set(sensorId, sensor);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`sensors\` (\`id\`, \`type\`, \`ward_id\`, \`location_name\`, \`status\`, \`last_value\`, \`unit\`)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`last_value\` = VALUES(\`last_value\`)`,
+        [sensorId, sensor.type, sensor.wardId, sensor.locationName, sensor.status, sensor.lastReading?.value || 0, sensor.unit]
+      ).catch(() => {});
+    }
   }
 
   public saveAiLog(log: AiTuningLog) {
     this.tables.ai_tuning_logs.set(log.id, log);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`ai_tuning_logs\` (\`id\`, \`case_id\`, \`officer_id\`, \`officer_action\`, \`confidence_score\`, \`created_at\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`officer_action\` = VALUES(\`officer_action\`)`,
+        [log.id, log.caseId, log.officerAction || 'AGREED', log.officerAction, log.originalAiConfidence || 0.85, this.toMysqlDatetime(log.timestamp)]
+      ).catch(() => {});
+    }
+  }
+
+  public saveBannedUser(userId: string) {
+    this.tables.banned_users.add(userId);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT IGNORE INTO \`banned_users\` (\`user_id\`, \`banned_at\`) VALUES (?, ?)`,
+        [userId, this.toMysqlDatetime()]
+      ).catch(() => {});
+    }
+  }
+
+  public removeBannedUser(userId: string) {
+    this.tables.banned_users.delete(userId);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `DELETE FROM \`banned_users\` WHERE \`user_id\` = ?`,
+        [userId]
+      ).catch(() => {});
+    }
   }
 
   public getDbStatus() {

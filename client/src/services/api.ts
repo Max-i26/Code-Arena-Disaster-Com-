@@ -237,4 +237,8 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+
+  async getAllUsers(): Promise<any> {
+    return safeFetchJson(`${API_BASE}/users`);
+  },
 };
