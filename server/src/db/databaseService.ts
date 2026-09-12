@@ -369,6 +369,17 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
+      // Column migrations for users
+      const userColumns = [
+        'verification_status VARCHAR(32) DEFAULT "APPROVED"',
+        'nic_number VARCHAR(64)',
+        'nic_document_url TEXT',
+        'official_details TEXT',
+      ];
+      for (const colDef of userColumns) {
+        try { await this.pool.query(`ALTER TABLE \`users\` ADD COLUMN ${colDef}`); } catch (e) { }
+      }
+
       // 2. Table: cases
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS \`cases\` (
@@ -384,9 +395,20 @@ class DatabaseService {
           \`description\` LONGTEXT,
           \`road_closed\` BOOLEAN DEFAULT FALSE,
           \`urgency\` VARCHAR(32),
-          \`confidence_score\` FLOAT
+          \`confidence_score\` FLOAT,
+          \`reporter_name\` VARCHAR(128),
+          \`reporter_phone\` VARCHAR(64)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+
+      // Column migrations for cases
+      const caseColumns = [
+        'reporter_name VARCHAR(128)',
+        'reporter_phone VARCHAR(64)',
+      ];
+      for (const colDef of caseColumns) {
+        try { await this.pool.query(`ALTER TABLE \`cases\` ADD COLUMN ${colDef}`); } catch (e) { }
+      }
 
       // 3. Table: tickets
       await this.pool.query(`
