@@ -451,3 +451,50 @@ apiRouter.post('/shelters/:id/toggle', (req, res) => {
   const updated = store.updateShelter(id, { isOpen: !shelter.isOpen });
   res.json({ success: true, shelter: updated });
 });
+
+// 16. Add New Shelter
+apiRouter.post('/shelters', (req, res) => {
+  const { name, wardId, location, totalCapacity, supplies, amenities, contactPhone } = req.body;
+  if (!name || !wardId) {
+    return res.status(400).json({ error: 'Shelter name and wardId are required' });
+  }
+  const shelter = store.addShelter({
+    name,
+    wardId,
+    location: location || {
+      lat: 6.9271,
+      lng: 79.8612,
+      roadName: 'Main Road',
+      roadHierarchy: 'ARTERIAL_A1',
+      wardId,
+      wardName: 'City Center Ward',
+    },
+    totalCapacity: Number(totalCapacity) || 100,
+    currentOccupancy: 0,
+    isOpen: true,
+    supplies: supplies || { foodPacks: 200, waterLitres: 1000, medicalKits: 20, blankets: 150 },
+    amenities: amenities || ['Emergency Backup Power', 'First Aid'],
+    contactPhone: contactPhone || '+94 11 200 0000',
+  });
+  res.json({ success: true, shelter });
+});
+
+// 17. Update Shelter
+apiRouter.put('/shelters/:id', (req, res) => {
+  const { id } = req.params;
+  const updated = store.updateShelter(id, req.body);
+  if (!updated) {
+    return res.status(404).json({ error: 'Shelter not found' });
+  }
+  res.json({ success: true, shelter: updated });
+});
+
+// 18. Delete Shelter
+apiRouter.delete('/shelters/:id', (req, res) => {
+  const { id } = req.params;
+  const success = store.deleteShelter(id);
+  if (!success) {
+    return res.status(404).json({ error: 'Shelter not found' });
+  }
+  res.json({ success: true, id });
+});

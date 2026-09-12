@@ -113,6 +113,24 @@ const ChangeMapView: React.FC<{ center: [number, number]; zoom: number }> = ({ c
   return null;
 };
 
+const AutoFitDetour: React.FC<{ path?: [number, number][] }> = ({ path }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (path && path.length > 0) {
+      try {
+        const validCoords = path.filter(p => Array.isArray(p) && p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1]));
+        if (validCoords.length > 0) {
+          const bounds = L.latLngBounds(validCoords);
+          map.fitBounds(bounds, { padding: [60, 60], animate: true });
+        }
+      } catch (err) {
+        console.warn('Could not fit map bounds for detour path:', err);
+      }
+    }
+  }, [path, map]);
+  return null;
+};
+
 export const MapComponent: React.FC<MapComponentProps> = ({
   wards,
   cases,
@@ -251,6 +269,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         className="z-0"
       >
         <ChangeMapView center={currentCenter} zoom={currentZoom} />
+        <AutoFitDetour path={activeDetourPath} />
 
         {/* Dynamic High-Definition Tile Layer */}
         <TileLayer
@@ -447,17 +466,43 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             );
           })}
 
-        {/* 6. Active Safe Detour Route Polyline */}
+        {/* 6. Active Safe Detour Route Polyline & Markers */}
         {activeDetourPath && activeDetourPath.length > 0 && (
-          <Polyline
-            positions={activeDetourPath}
-            pathOptions={{
-              color: '#38bdf8',
-              weight: 5,
-              opacity: 0.9,
-              dashArray: '8, 8',
-            }}
-          />
+          <>
+            <Polyline
+              positions={activeDetourPath}
+              pathOptions={{
+                color: '#38bdf8',
+                weight: 6,
+                opacity: 0.95,
+                dashArray: '10, 10',
+              }}
+            />
+            {/* Start Marker: Citizen Location */}
+            {activeDetourPath[0] && (
+              <Marker
+                position={activeDetourPath[0]}
+                icon={createCustomIcon('#e11d48', '🏃', true)}
+              >
+                <Popup>
+                  <div className="text-xs font-bold text-rose-400">🏃 Evacuation Start: Citizen Location</div>
+                  <div className="text-[10px] text-slate-300 font-mono">GPS: {activeDetourPath[0][0].toFixed(4)}, {activeDetourPath[0][1].toFixed(4)}</div>
+                </Popup>
+              </Marker>
+            )}
+            {/* End Marker: Destination Relief Shelter */}
+            {activeDetourPath[activeDetourPath.length - 1] && (
+              <Marker
+                position={activeDetourPath[activeDetourPath.length - 1]}
+                icon={createCustomIcon('#16a34a', '🏠', true)}
+              >
+                <Popup>
+                  <div className="text-xs font-bold text-emerald-400">🏠 Evacuation Destination: Matched Shelter</div>
+                  <div className="text-[10px] text-slate-300 font-mono">GPS: {activeDetourPath[activeDetourPath.length - 1][0].toFixed(4)}, {activeDetourPath[activeDetourPath.length - 1][1].toFixed(4)}</div>
+                </Popup>
+              </Marker>
+            )}
+          </>
         )}
       </MapContainer>
     </div>

@@ -162,11 +162,37 @@ class StateStore {
   public updateShelter(id: string, updates: Partial<Shelter>): Shelter | undefined {
     const idx = this.shelters.findIndex(s => s.id === id);
     if (idx >= 0) {
-      this.shelters[idx] = { ...this.shelters[idx], ...updates };
+      const existing = this.shelters[idx];
+      const updatedSupplies = updates.supplies
+        ? { ...existing.supplies, ...updates.supplies }
+        : existing.supplies;
+      this.shelters[idx] = {
+        ...existing,
+        ...updates,
+        supplies: updatedSupplies,
+      };
       this.emit('SHELTER_UPDATED', this.shelters[idx]);
       return this.shelters[idx];
     }
     return undefined;
+  }
+
+  public addShelter(newShelter: Omit<Shelter, 'id'> & { id?: string }): Shelter {
+    const id = newShelter.id || `shelter-${Date.now()}`;
+    const shelter: Shelter = { ...newShelter, id };
+    this.shelters.push(shelter);
+    this.emit('SHELTER_ADDED', shelter);
+    return shelter;
+  }
+
+  public deleteShelter(id: string): boolean {
+    const idx = this.shelters.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      const deleted = this.shelters.splice(idx, 1)[0];
+      this.emit('SHELTER_DELETED', deleted);
+      return true;
+    }
+    return false;
   }
 
   // Field Crews
