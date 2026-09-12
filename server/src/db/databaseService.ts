@@ -497,7 +497,7 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
-      // Schema Migration for existing databases: ensure image/large text columns are LONGTEXT
+      // Schema Migration for existing databases: ensure image/large text columns are LONGTEXT & columns match dump
       try {
         await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `nic_document_url` LONGTEXT');
         await this.pool.query('ALTER TABLE `users` MODIFY COLUMN `official_details` LONGTEXT');
@@ -505,6 +505,8 @@ class DatabaseService {
         await this.pool.query('ALTER TABLE `cases` MODIFY COLUMN `description` LONGTEXT');
         await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_photo_url` LONGTEXT');
         await this.pool.query('ALTER TABLE `tickets` MODIFY COLUMN `resolution_notes` LONGTEXT');
+        try { await this.pool.query('ALTER TABLE `cases` ADD COLUMN `reporter_name` VARCHAR(128) DEFAULT ""'); } catch (e) {}
+        try { await this.pool.query('ALTER TABLE `cases` ADD COLUMN `reporter_phone` VARCHAR(64) DEFAULT ""'); } catch (e) {}
       } catch (alterErr: any) {
         console.warn('[ResQCity SQL DB] Schema alter warning (ignorable if columns up to date):', alterErr.message);
       }
@@ -866,9 +868,9 @@ class DatabaseService {
     if (this.isConnectedToMysql && this.pool) {
       try {
         await this.pool.query(
-          `INSERT INTO \`cases\` (\`id\`, \`report_id\`, \`source\`, \`created_at\`, \`hazard_type\`, \`status\`, \`road_name\`, \`ward_id\`, \`image_url\`, \`description\`, \`road_closed\`, \`urgency\`, \`confidence_score\`)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`)`,
+          `INSERT INTO \`cases\` (\`id\`, \`report_id\`, \`source\`, \`created_at\`, \`hazard_type\`, \`status\`, \`road_name\`, \`ward_id\`, \`image_url\`, \`description\`, \`road_closed\`, \`urgency\`, \`confidence_score\`, \`reporter_name\`, \`reporter_phone\`)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`), \`reporter_name\` = VALUES(\`reporter_name\`), \`reporter_phone\` = VALUES(\`reporter_phone\`)`,
           [
             c.id || `case-${Date.now()}`,
             c.reportId || '',
@@ -883,6 +885,8 @@ class DatabaseService {
             c.roadClosed ? 1 : 0,
             c.urgency || 'MEDIUM',
             c.verdictData?.confidenceScore ?? 0.85,
+            (c as any).reporterName || (c as any).userName || '',
+            (c as any).reporterPhone || (c as any).contactPhone || '',
           ]
         );
       } catch (err: any) {
