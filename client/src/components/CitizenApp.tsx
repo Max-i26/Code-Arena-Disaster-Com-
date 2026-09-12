@@ -178,21 +178,31 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
       label: '🌊 Deep Road Flood (Severe)',
       url: 'https://images.unsplash.com/photo-1547683905-f686c993aae5?auto=format&fit=crop&w=800&q=80',
       type: 'FLOOD',
+      desc: 'Severe flood depth 3ft, stranded vehicles on main corridor.',
+    },
+    {
+      label: '🟡 Borderline Flood (Triggers Verification Loop)',
+      url: 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=800&q=80',
+      type: 'FLOOD',
+      desc: 'Minor borderline water accumulation near curb, unclear if road is blocked.',
     },
     {
       label: '🌳 Fallen Tree on Road',
       url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80',
       type: 'FALLEN_TREE',
+      desc: 'Fallen tree obstructing lanes.',
     },
     {
       label: '⛰️ Mud / Landslide Blockage',
       url: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80',
       type: 'LANDSLIDE',
+      desc: 'Mud and rock debris slide.',
     },
     {
       label: '🐱 Non-Hazard / Joke Meme (AI Rejection Test)',
       url: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
       type: 'FLOOD',
+      desc: 'Just a test joke photo',
     },
   ];
 
@@ -428,6 +438,7 @@ export const CitizenApp: React.FC<CitizenAppProps> = ({
                       onClick={() => {
                         setImageUrl(p.url);
                         setHazardType(p.type as HazardType);
+                        if (p.desc) setDescription(p.desc);
                       }}
                       className={`text-left p-2 rounded-xl border text-[11px] transition flex items-center space-x-2 ${
                         imageUrl === p.url

@@ -62,7 +62,13 @@ Provide a concise 1-sentence analytical summary.`;
   let summary = aiSummary || `Visual analysis confirmed authentic ${hazardType.replace(/_/g, ' ').toLowerCase()} with clear carriage-way obstruction.`;
 
   if (hazardType === 'FLOOD') {
-    if (desc.includes('submerged') || desc.includes('feet') || desc.includes('stalled') || desc.includes('deep')) {
+    if (desc.includes('borderline') || desc.includes('unclear') || desc.includes('minor') || desc.includes('verify')) {
+      score = 0.55;
+      severityAssessment = 'MINOR';
+      if (!aiSummary) {
+        summary = 'Visual analysis indicates ambiguous or minor water accumulation; requires crowdsourced community verification.';
+      }
+    } else if (desc.includes('submerged') || desc.includes('feet') || desc.includes('stalled') || desc.includes('deep')) {
       score = 0.96;
       severityAssessment = 'SEVERE';
       if (!aiSummary) {
