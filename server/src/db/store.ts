@@ -12,6 +12,7 @@ import {
   AiTuningLog 
 } from '../types';
 import { WARDS, SENSORS, SHELTERS, FIELD_CREWS, INITIAL_CASES, INITIAL_CONFIG, WardDefinition } from './mockData';
+import { dbService } from './databaseService';
 
 const PERSISTENT_FILE_PATH = path.join(__dirname, 'persistent_store.json');
 
@@ -115,6 +116,14 @@ class StateStore {
         bannedUsers: Array.from(this.bannedUsers),
       };
       fs.writeFileSync(PERSISTENT_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+
+      // Sync with SQL Database Engine
+      this.cases.forEach(c => dbService.saveCase(c));
+      this.tickets.forEach(t => dbService.saveTicket(t));
+      this.shelters.forEach(s => dbService.saveShelter(s));
+      this.fieldCrews.forEach(fc => dbService.saveFieldCrew(fc));
+      this.reliefRequests.forEach(r => dbService.saveReliefRequest(r));
+      this.aiTuningLogs.forEach(l => dbService.saveAiLog(l));
     } catch (err: any) {
       console.error('[ResQCity Store] Error saving persistent state:', err.message);
     }

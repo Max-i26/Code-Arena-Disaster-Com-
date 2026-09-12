@@ -37,6 +37,15 @@ apiRouter.get('/state', (req, res) => {
     bannedUsers: store.getBannedUsers(),
     aiTuningLogs: store.getAiTuningLogs(),
     simulation: stormSimulator.getCurrentState(),
+    dbStatus: db.getDbStatus(),
+  });
+});
+
+// 1b. Database Metrics & Table Health Status
+apiRouter.get('/db/status', (req, res) => {
+  res.json({
+    success: true,
+    dbStatus: db.getDbStatus(),
   });
 });
 

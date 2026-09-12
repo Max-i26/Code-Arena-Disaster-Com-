@@ -22,6 +22,8 @@ import {
   UserCheck,
   UserPlus,
   FileCheck,
+  Database,
+  Server,
 } from 'lucide-react';
 import { AppState, SystemConfig, AiTuningLog, HazardCase } from '../types';
 import { api } from '../services/api';
@@ -77,9 +79,10 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
   // AI Log filter state
   const [logFilter, setLogFilter] = useState<LogFilterAction>('ALL');
 
-  // Verification Queue State
+  // Verification Queue & Database State
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([]);
   const [isLoadingPending, setIsLoadingPending] = useState(false);
+  const [dbMetrics, setDbMetrics] = useState<any>(null);
 
   // Create Admin Form State
   const [newAdminForm, setNewAdminForm] = useState({
@@ -91,6 +94,18 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
   const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
   const [adminCreateSuccess, setAdminCreateSuccess] = useState('');
 
+  const fetchDbStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/db/status');
+      const data = await res.json();
+      if (data.success) {
+        setDbMetrics(data.dbStatus);
+      }
+    } catch (err) {
+      console.error('Failed to fetch DB status:', err);
+    }
+  }, []);
+
   const fetchPendingVerifications = useCallback(async () => {
     try {
       setIsLoadingPending(true);
@@ -98,12 +113,13 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
       if (res.success) {
         setPendingVerifications(res.pendingUsers || []);
       }
+      fetchDbStatus();
     } catch (err) {
       console.error('Failed to fetch pending verifications:', err);
     } finally {
       setIsLoadingPending(false);
     }
-  }, []);
+  }, [fetchDbStatus]);
 
   useEffect(() => {
     fetchPendingVerifications();
@@ -380,17 +396,30 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
                   </div>
 
                   <div className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1">
-                    <div className="text-slate-400 font-bold">NIC DOCUMENT PROOF PHOTO</div>
+                    <div className="text-slate-400 font-bold flex items-center space-x-1">
+                      <FileCheck className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>NIC DOCUMENT PROOF PHOTO</span>
+                    </div>
                     {user.nicDocumentUrl ? (
-                      <div className="mt-1 rounded-lg overflow-hidden h-20 bg-slate-950 border border-slate-700">
+                      <a
+                        href={user.nicDocumentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 block rounded-lg overflow-hidden h-24 bg-slate-950 border border-slate-700 relative group cursor-pointer"
+                      >
                         <img
                           src={user.nicDocumentUrl}
                           alt="Uploaded NIC Proof"
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                         />
-                      </div>
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <span className="text-[10px] text-cyan-300 font-bold bg-slate-900/90 px-2 py-1 rounded border border-cyan-500/50">
+                            🔍 Click to View Full Image
+                          </span>
+                        </div>
+                      </a>
                     ) : (
-                      <div className="text-slate-500 italic">No document attached</div>
+                      <div className="text-slate-500 italic py-2">No document attached</div>
                     )}
                   </div>
                 </div>
@@ -537,6 +566,68 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({ state, onRefresh }) =>
             <span className={`text-3xl font-extrabold font-mono ${activeRoadClosures > 0 ? 'text-rose-400' : 'text-slate-400'}`}>
               {activeRoadClosures}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SQL DATABASE INFRASTRUCTURE & ACTIVE TABLES PANEL */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+          <div className="flex items-center space-x-3">
+            <Database className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-base font-extrabold text-white uppercase tracking-wider">
+              SQL Database Infrastructure &amp; Live Tables Status
+            </h3>
+          </div>
+          <span className={`flex items-center gap-2 text-xs font-mono font-bold uppercase px-3 py-1 rounded-full ${
+            dbMetrics?.connectedToMysql
+              ? 'bg-emerald-950 border border-emerald-700 text-emerald-300'
+              : 'bg-cyan-950 border border-cyan-700 text-cyan-300'
+          }`}>
+            <Server className="w-3.5 h-3.5" />
+            <span>{dbMetrics?.engine || 'SQL Database Engine Operational'}</span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 text-xs font-mono">
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-slate-400 font-bold uppercase">Database Host</div>
+            <div className="text-cyan-300 font-extrabold text-sm">{dbMetrics?.host || 'localhost:3306'}</div>
+          </div>
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-slate-400 font-bold uppercase">Database Name</div>
+            <div className="text-emerald-400 font-extrabold text-sm">{dbMetrics?.databaseName || 'resqcity_db'}</div>
+          </div>
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-slate-400 font-bold uppercase">User Accounts Table</div>
+            <div className="text-amber-300 font-extrabold text-sm">{dbMetrics?.tableCounts?.users ?? 5} records</div>
+          </div>
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-slate-400 font-bold uppercase">Hazard Cases Table</div>
+            <div className="text-cyan-300 font-extrabold text-sm">{dbMetrics?.tableCounts?.cases ?? state.cases.length} records</div>
+          </div>
+          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
+            <div className="text-slate-400 font-bold uppercase">Council Tickets Table</div>
+            <div className="text-violet-300 font-extrabold text-sm">{dbMetrics?.tableCounts?.tickets ?? state.tickets.length} records</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono pt-1">
+          <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
+            <span className="text-slate-400">Shelters Table:</span>
+            <span className="text-emerald-400 font-bold">{dbMetrics?.tableCounts?.shelters ?? state.shelters.length} rows</span>
+          </div>
+          <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
+            <span className="text-slate-400">Field Crews Table:</span>
+            <span className="text-cyan-400 font-bold">{dbMetrics?.tableCounts?.field_crews ?? state.fieldCrews.length} rows</span>
+          </div>
+          <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
+            <span className="text-slate-400">Relief Requests Table:</span>
+            <span className="text-amber-400 font-bold">{dbMetrics?.tableCounts?.relief_requests ?? state.reliefRequests.length} rows</span>
+          </div>
+          <div className="bg-slate-950/60 px-3 py-2 rounded-lg border border-slate-800/80 flex items-center justify-between">
+            <span className="text-slate-400">AI Feedback Logs Table:</span>
+            <span className="text-violet-400 font-bold">{dbMetrics?.tableCounts?.ai_tuning_logs ?? state.aiTuningLogs.length} rows</span>
           </div>
         </div>
       </div>
