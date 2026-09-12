@@ -257,6 +257,16 @@ class StateStore {
     return undefined;
   }
 
+  public deleteTicketByCaseId(caseId: string): boolean {
+    const idx = this.tickets.findIndex(t => t.caseId === caseId);
+    if (idx >= 0) {
+      const deleted = this.tickets.splice(idx, 1)[0];
+      this.emit('TICKET_DELETED', deleted);
+      return true;
+    }
+    return false;
+  }
+
   // Relief Requests
   public getReliefRequests(): ReliefRequest[] {
     return this.reliefRequests;

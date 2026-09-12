@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Building2,
   Filter,
@@ -48,6 +48,14 @@ function sortByUrgency(cases: HazardCase[]): HazardCase[] {
     return ua - ub;
   });
 }
+
+const HAZARD_SPECIALIZATION_MAP: Record<string, string[]> = {
+  FLOOD: ['WATER_PUMPING', 'RESCUE_BOAT'],
+  FALLEN_TREE: ['TREE_CLEARANCE', 'ROAD_REPAIR'],
+  LANDSLIDE: ['ROAD_REPAIR', 'TREE_CLEARANCE'],
+  BLOCKED_DRAIN: ['WATER_PUMPING', 'ROAD_REPAIR'],
+  DOWNED_POWERLINE: ['ROAD_REPAIR', 'TREE_CLEARANCE'],
+};
 
 // ─── Sub-component: Case Photo Thumbnail ─────────────────────────────────────
 
@@ -391,16 +399,21 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
   const availableCrews = state.fieldCrews.filter((c) => c.status === 'AVAILABLE');
   const resolvedCount = state.cases.filter((c) => c.status === 'RESOLVED').length;
 
-  const handleDispatch = async (ticketId: string) => {
-    const crewId = selectedCrewForTicket[ticketId] || availableCrews[0]?.id;
+  const handleDispatch = async (ticket: CouncilTicket) => {
+    let crewId = selectedCrewForTicket[ticket.id];
     if (!crewId) {
-      alert('Please select a field crew unit to dispatch.');
+      const preferredSpecs = HAZARD_SPECIALIZATION_MAP[ticket.hazardType] || [];
+      const match = availableCrews.find(c => preferredSpecs.includes(c.specialization)) || availableCrews[0];
+      crewId = match?.id;
+    }
+    if (!crewId) {
+      alert('No available field crew squad for dispatch.');
       return;
     }
     try {
-      setIsDispatching(ticketId);
-      await api.dispatchTicket(ticketId, crewId);
-      alert('Emergency crew dispatched successfully. Work order updated.');
+      setIsDispatching(ticket.id);
+      await api.dispatchTicket(ticket.id, crewId);
+      alert('Specialized emergency squad dispatched successfully!');
       onRefresh();
     } catch (err: any) {
       alert(`Dispatch failed: ${err.message}`);
@@ -573,7 +586,18 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-2 pt-1">
-                      <label className="text-[11px] text-slate-400 block">Select Field Crew Squad:</label>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <label className="text-slate-400">Select Field Crew Squad:</label>
+                        {(() => {
+                          const preferredSpecs = HAZARD_SPECIALIZATION_MAP[t.hazardType] || [];
+                          const selectedId = selectedCrewForTicket[t.id];
+                          const selectedCrew = state.fieldCrews.find(c => c.id === selectedId);
+                          if (selectedCrew && preferredSpecs.includes(selectedCrew.specialization)) {
+                            return <span className="text-emerald-400 font-semibold text-[10px]">✓ Specialized Match</span>;
+                          }
+                          return null;
+                        })()}
+                      </div>
                       <select
                         value={selectedCrewForTicket[t.id] || ''}
                         onChange={(e) =>
@@ -581,15 +605,19 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                         }
                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
                       >
-                        <option value="">-- Choose Available Squad --</option>
-                        {state.fieldCrews.map((cr) => (
-                          <option key={cr.id} value={cr.id}>
-                            {cr.name} ({cr.status} · {cr.specialization})
-                          </option>
-                        ))}
+                        <option value="">-- Auto-Assign Best Match --</option>
+                        {state.fieldCrews.map((cr) => {
+                          const preferredSpecs = HAZARD_SPECIALIZATION_MAP[t.hazardType] || [];
+                          const isMatch = preferredSpecs.includes(cr.specialization);
+                          return (
+                            <option key={cr.id} value={cr.id}>
+                              {isMatch ? '⭐ ' : ''}{cr.name} ({cr.status} · {cr.specialization}){isMatch ? ' [MATCH]' : ''}
+                            </option>
+                          );
+                        })}
                       </select>
                       <button
-                        onClick={() => handleDispatch(t.id)}
+                        onClick={() => handleDispatch(t)}
                         disabled={isDispatching === t.id}
                         className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-2 rounded-lg text-xs transition flex items-center justify-center space-x-1.5 disabled:opacity-50"
                       >

@@ -205,10 +205,35 @@ apiRouter.post('/tickets/:id/dispatch', (req, res) => {
   const { crewId } = req.body;
 
   const ticket = store.getTicketById(id);
-  const crew = store.getFieldCrewById(crewId);
+  if (!ticket) {
+    return res.status(404).json({ error: 'Ticket not found' });
+  }
 
-  if (!ticket || !crew) {
-    return res.status(404).json({ error: 'Ticket or Crew not found' });
+  let crew = crewId ? store.getFieldCrewById(crewId) : undefined;
+
+  // If no crewId provided or invalid, run Smart Specialization Matcher
+  if (!crew) {
+    const availableCrews = store.getFieldCrews().filter(c => c.status === 'AVAILABLE');
+    const specMap: Record<string, string[]> = {
+      FLOOD: ['WATER_PUMPING', 'RESCUE_BOAT'],
+      FALLEN_TREE: ['TREE_CLEARANCE', 'ROAD_REPAIR'],
+      LANDSLIDE: ['ROAD_REPAIR', 'TREE_CLEARANCE'],
+      BLOCKED_DRAIN: ['WATER_PUMPING', 'ROAD_REPAIR'],
+      DOWNED_POWERLINE: ['ROAD_REPAIR', 'TREE_CLEARANCE'],
+    };
+    const preferredSpecs = specMap[ticket.hazardType] || [];
+    for (const spec of preferredSpecs) {
+      const match = availableCrews.find(c => c.specialization === spec);
+      if (match) {
+        crew = match;
+        break;
+      }
+    }
+    if (!crew) crew = availableCrews[0];
+  }
+
+  if (!crew) {
+    return res.status(400).json({ error: 'No available field crew squad for dispatch' });
   }
 
   store.updateFieldCrew(crew.id, {
@@ -334,13 +359,31 @@ apiRouter.post('/cases/:id/feedback', (req, res) => {
 
   const log = aiFeedback.logHumanDecision(id, action, notes);
 
-  if (action === 'OVERRIDDEN_VERIFIED') {
-    store.updateCase(id, { status: 'VERIFIED', roadClosed: true });
+  if (action === 'AGREED' || action === 'OVERRIDDEN_VERIFIED') {
+    const updatedCase = store.updateCase(id, { status: 'VERIFIED', roadClosed: true });
+
+    // Ensure a work order ticket exists in Council Dispatch Work Orders
+    const existingTicket = store.getTickets().find(t => t.caseId === id);
+    if (!existingTicket && updatedCase) {
+      const safeRoute = calculateSafeRoute([updatedCase.location.lat, updatedCase.location.lng]);
+      store.addTicket({
+        id: `ticket-${Date.now()}`,
+        caseId: id,
+        createdAt: new Date().toISOString(),
+        wardId: updatedCase.location.wardId,
+        hazardType: updatedCase.hazardType,
+        urgency: updatedCase.verdictData?.urgency || 'HIGH',
+        status: 'OPEN',
+        detourRoute: safeRoute.steps,
+      });
+    }
   } else if (action === 'OVERRIDDEN_REJECTED') {
     store.updateCase(id, { status: 'REJECTED', roadClosed: false });
+    // Remove any pending ticket for this rejected case so it clears from dispatch
+    store.deleteTicketByCaseId(id);
   }
 
-  res.json({ log, case: store.getCaseById(id) });
+  res.json({ log, case: store.getCaseById(id), tickets: store.getTickets() });
 });
 
 // 8. System Config Update
