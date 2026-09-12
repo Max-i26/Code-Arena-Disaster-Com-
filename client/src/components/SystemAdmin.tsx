@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { AppState, SystemConfig, AiTuningLog, HazardCase } from '../types';
 import { api } from '../services/api';
+import { validateUsername, validatePassword, validateFullName, validateEmail } from '../utils/validators';
 
 interface SystemAdminProps {
   state: AppState;

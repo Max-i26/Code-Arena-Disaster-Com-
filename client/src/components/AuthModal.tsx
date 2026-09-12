@@ -2,6 +2,14 @@ import React, { useState } from 'react';
 import { X, LogIn, UserPlus, Shield, Database, User, Lock, Upload, CheckCircle2, Clock, FileCheck } from 'lucide-react';
 import { UserRole } from './Navbar';
 import { api } from '../services/api';
+import { 
+  validateNic, 
+  validateEmail, 
+  validatePhone, 
+  validateUsername, 
+  validatePassword, 
+  validateFullName 
+} from '../utils/validators';
 
 interface AuthModalProps {
   onClose: () => void;
@@ -29,10 +37,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [phone, setPhone] = useState('+94 77 123 4567');
 
   // Official Personnel NIC Verification Fields
-  const [nicNumber, setNicNumber] = useState('199483720191V');
-  const [nicDocumentUrl, setNicDocumentUrl] = useState(
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80'
-  );
+  const [nicNumber, setNicNumber] = useState('');
+  const [nicDocumentUrl, setNicDocumentUrl] = useState('');
   const [officialDetails, setOfficialDetails] = useState('');
   const [isUploadingNicDoc, setIsUploadingNicDoc] = useState(false);
 
@@ -81,6 +87,94 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     e.preventDefault();
     setErrorMessage(null);
     setPendingNotice(null);
+
+    // Strict Client-Side Pre-Save Validation
+    if (mode === 'REGISTER') {
+      // 1. Full Name validation
+      const nameVal = validateFullName(fullName);
+      if (!nameVal.valid) {
+        const err = nameVal.error || 'Full Name is required.';
+        setErrorMessage(err);
+        alert(`⚠️ Registration Validation Error:\n\n${err}`);
+        return;
+      }
+
+      // 2. Username validation
+      const userVal = validateUsername(username);
+      if (!userVal.valid) {
+        const err = userVal.error || 'Invalid username.';
+        setErrorMessage(err);
+        alert(`⚠️ Registration Validation Error:\n\n${err}`);
+        return;
+      }
+
+      // 3. Password validation
+      const passVal = validatePassword(password);
+      if (!passVal.valid) {
+        const err = passVal.error || 'Invalid password.';
+        setErrorMessage(err);
+        alert(`⚠️ Registration Validation Error:\n\n${err}`);
+        return;
+      }
+
+      // 4. Email validation if provided
+      if (email && email.trim()) {
+        const emailVal = validateEmail(email);
+        if (!emailVal.valid) {
+          const err = emailVal.error || 'Invalid email address.';
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+      }
+
+      // 5. Phone validation if provided
+      if (phone && phone.trim()) {
+        const phoneVal = validatePhone(phone);
+        if (!phoneVal.valid) {
+          const err = phoneVal.error || 'Invalid phone number.';
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+      }
+
+      // 6. Official Personnel & NIC Validation
+      const isOfficialRole = role === 'COUNCIL_OFFICER' || role === 'FIELD_CREW' || role === 'RELIEF_DESK';
+      if (isOfficialRole) {
+        if (!nicNumber.trim()) {
+          const err = "NIC (National Identity Card) Number is mandatory for official personnel account verification.";
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+        if (!nicDocumentUrl.trim()) {
+          const err = "Please upload or attach your NIC Document Proof photo for official account verification.";
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+        if (!officialDetails.trim()) {
+          const err = "Please enter your department ID, division, or squad details.";
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+      }
+
+      // NIC Format check if provided (always for official roles, or optional for citizen)
+      if (nicNumber && nicNumber.trim()) {
+        const cleanNic = nicNumber.trim().toUpperCase();
+        const nicVal = validateNic(cleanNic);
+        if (!nicVal.valid) {
+          const err = nicVal.error || 'Invalid NIC format.';
+          setErrorMessage(err);
+          alert(`⚠️ Registration Validation Error:\n\n${err}`);
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -93,49 +187,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             onSuccess(res.user, res.token);
           }
         } else {
-          setErrorMessage(res.error || 'Login failed.');
+          const err = res.error || 'Login failed.';
+          setErrorMessage(err);
+          alert(`⚠️ Login Failed:\n\n${err}`);
         }
       } else {
-        // Validation for official roles
-        const isOfficialRole = role === 'COUNCIL_OFFICER' || role === 'FIELD_CREW' || role === 'RELIEF_DESK';
-        if (isOfficialRole) {
-          if (!nicNumber.trim()) {
-            setErrorMessage("NIC (National Identity Card) Number is required for official personnel verification.");
-            setIsSubmitting(false);
-            return;
-          }
-          if (!nicDocumentUrl.trim()) {
-            setErrorMessage("Please upload or attach your NIC Document Proof photo.");
-            setIsSubmitting(false);
-            return;
-          }
-        }
-
         const res = await api.register({
-          username,
+          username: username.trim(),
           password,
-          fullName,
-          email,
+          fullName: fullName.trim(),
+          email: email.trim(),
           role,
-          phone,
-          nicNumber,
-          nicDocumentUrl,
-          officialDetails: officialDetails || `${role.replace('_', ' ')} Registered Personnel`,
+          phone: phone.trim(),
+          nicNumber: nicNumber.trim().toUpperCase(),
+          nicDocumentUrl: nicDocumentUrl.trim(),
+          officialDetails: officialDetails.trim() || `${role.replace('_', ' ')} Registered Personnel`,
         });
 
         if (res.success) {
-          alert(`You are registered successfully! Your ${res.user?.role ? res.user.role.replace('_', ' ') : 'Citizen'} account details have been stored in the database.`);
+          alert(`✅ Account registered successfully in MySQL!\n\nRole: ${res.user?.role ? res.user.role.replace('_', ' ') : 'Citizen'}\nStatus: ${res.user?.verificationStatus || 'PENDING'}`);
           if (res.user?.verificationStatus === 'PENDING') {
             setPendingNotice('Registration Submitted Successfully! Your official account is currently PENDING Admin verification. A System Administrator will review your NIC card and credentials before portal access is activated.');
           } else {
             onSuccess(res.user, res.token);
           }
         } else {
-          setErrorMessage(res.error || 'Registration failed.');
+          const err = res.error || 'Registration failed.';
+          setErrorMessage(err);
+          alert(`⚠️ Registration Error:\n\n${err}`);
         }
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'An error occurred during authentication.');
+      const msg = err.message || 'An error occurred during authentication.';
+      setErrorMessage(msg);
+      alert(`⚠️ Registration Error:\n\n${msg}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -329,6 +414,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     * System Admin accounts cannot be created publicly; they can only be added by an existing Admin.
                   </p>
                 </div>
+
+                {!isOfficialRole && (
+                  <div>
+                    <label className="text-slate-300 block mb-1.5 font-semibold">National Identity Card (NIC) Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={nicNumber}
+                      onChange={(e) => setNicNumber(e.target.value)}
+                      placeholder="e.g. 199483720191V or 199483720191"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-mono font-bold focus:outline-none focus:border-cyan-400"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1 font-mono">
+                      * Must be unique. Sri Lankan format: 9 digits + V/X or 12 digits.
+                    </p>
+                  </div>
+                )}
 
                 {/* Tailored NIC Verification Fields for Official Roles */}
                 {isOfficialRole && (
