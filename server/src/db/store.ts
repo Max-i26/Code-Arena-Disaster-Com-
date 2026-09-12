@@ -150,6 +150,16 @@ class StateStore {
     return undefined;
   }
 
+  public deleteCase(id: string): boolean {
+    const idx = this.cases.findIndex(c => c.id === id);
+    if (idx >= 0) {
+      const deleted = this.cases.splice(idx, 1)[0];
+      this.emit('CASE_DELETED', deleted);
+      return true;
+    }
+    return false;
+  }
+
   // Shelters
   public getShelters(): Shelter[] {
     return this.shelters;

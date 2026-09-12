@@ -13,6 +13,10 @@ export interface DbUser {
   wardId: string;
   trustScore: number;
   createdAt: string;
+  verificationStatus?: 'APPROVED' | 'PENDING' | 'REJECTED';
+  nicNumber?: string;
+  nicDocumentUrl?: string;
+  officialDetails?: string;
 }
 
 class DatabaseService {
@@ -64,7 +68,11 @@ class DatabaseService {
           \`phone\` VARCHAR(32),
           \`ward_id\` VARCHAR(64),
           \`trust_score\` FLOAT DEFAULT 0.85,
-          \`created_at\` DATETIME NOT NULL
+          \`created_at\` DATETIME NOT NULL,
+          \`verification_status\` VARCHAR(32) DEFAULT 'APPROVED',
+          \`nic_number\` VARCHAR(64),
+          \`nic_document_url\` TEXT,
+          \`official_details\` TEXT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
@@ -96,6 +104,9 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
+        verificationStatus: 'APPROVED',
+        nicNumber: '199083740192V',
+        officialDetails: 'CMC Command Division — Senior Officer ID #8841',
       },
       {
         id: 'usr-citizen-01',
@@ -108,6 +119,7 @@ class DatabaseService {
         wardId: 'ward-02',
         trustScore: 0.88,
         createdAt: now,
+        verificationStatus: 'APPROVED',
       },
       {
         id: 'usr-crew-01',
@@ -120,6 +132,9 @@ class DatabaseService {
         wardId: 'ward-02',
         trustScore: 1.0,
         createdAt: now,
+        verificationStatus: 'APPROVED',
+        nicNumber: '198883740991V',
+        officialDetails: 'Rapid Pump Squad 01 (Water Pumping & Drainage)',
       },
       {
         id: 'usr-relief-01',
@@ -132,6 +147,9 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
+        verificationStatus: 'APPROVED',
+        nicNumber: '199583740221V',
+        officialDetails: 'Viharamahadevi Park Primary Relief Center',
       },
       {
         id: 'usr-admin-01',
@@ -144,6 +162,7 @@ class DatabaseService {
         wardId: 'ward-01',
         trustScore: 1.0,
         createdAt: now,
+        verificationStatus: 'APPROVED',
       },
     ];
 
@@ -172,6 +191,10 @@ class DatabaseService {
             wardId: r.ward_id,
             trustScore: r.trust_score,
             createdAt: r.created_at,
+            verificationStatus: r.verification_status || 'APPROVED',
+            nicNumber: r.nic_number,
+            nicDocumentUrl: r.nic_document_url,
+            officialDetails: r.official_details,
           };
         }
         return null;
@@ -202,6 +225,10 @@ class DatabaseService {
             wardId: r.ward_id,
             trustScore: r.trust_score,
             createdAt: r.created_at,
+            verificationStatus: r.verification_status || 'APPROVED',
+            nicNumber: r.nic_number,
+            nicDocumentUrl: r.nic_document_url,
+            officialDetails: r.official_details,
           };
         }
         return null;
@@ -220,12 +247,13 @@ class DatabaseService {
   public async createUser(user: DbUser): Promise<DbUser> {
     const cleanUsername = user.username.toLowerCase().trim();
     user.username = cleanUsername;
+    user.verificationStatus = user.verificationStatus || (user.role === 'CITIZEN' || user.role === 'SYSTEM_ADMIN' ? 'APPROVED' : 'PENDING');
 
     if (this.isConnectedToMysql && this.pool) {
       try {
         await this.pool.query(
-          `INSERT INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO \`users\` (\`id\`, \`username\`, \`password_hash\`, \`full_name\`, \`email\`, \`role\`, \`phone\`, \`ward_id\`, \`trust_score\`, \`created_at\`, \`verification_status\`, \`nic_number\`, \`nic_document_url\`, \`official_details\`)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             user.id,
             user.username,
@@ -237,6 +265,10 @@ class DatabaseService {
             user.wardId || 'ward-01',
             user.trustScore || 0.85,
             user.createdAt,
+            user.verificationStatus,
+            user.nicNumber || '',
+            user.nicDocumentUrl || '',
+            user.officialDetails || '',
           ]
         );
       } catch (err: any) {
@@ -246,6 +278,65 @@ class DatabaseService {
 
     this.fallbackUsers.set(cleanUsername, user);
     return user;
+  }
+
+  public async getPendingUsers(): Promise<DbUser[]> {
+    const pendingUsers: DbUser[] = [];
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        const [rows]: any = await this.pool.query('SELECT * FROM `users` WHERE `verification_status` = "PENDING"');
+        if (rows) {
+          for (const r of rows) {
+            pendingUsers.push({
+              id: r.id,
+              username: r.username,
+              passwordHash: r.password_hash,
+              fullName: r.full_name,
+              email: r.email,
+              role: r.role as UserRole,
+              phone: r.phone,
+              wardId: r.ward_id,
+              trustScore: r.trust_score,
+              createdAt: r.created_at,
+              verificationStatus: r.verification_status,
+              nicNumber: r.nic_number,
+              nicDocumentUrl: r.nic_document_url,
+              officialDetails: r.official_details,
+            });
+          }
+          return pendingUsers;
+        }
+      } catch (err) {
+        console.error('MySQL pending query error:', err);
+      }
+    }
+
+    // Fallback memory query
+    for (const u of this.fallbackUsers.values()) {
+      if (u.verificationStatus === 'PENDING') {
+        pendingUsers.push(u);
+      }
+    }
+    return pendingUsers;
+  }
+
+  public async updateUserVerification(userId: string, status: 'APPROVED' | 'REJECTED'): Promise<boolean> {
+    if (this.isConnectedToMysql && this.pool) {
+      try {
+        await this.pool.query('UPDATE `users` SET `verification_status` = ? WHERE `id` = ?', [status, userId]);
+      } catch (err) {
+        console.error('MySQL verification update error:', err);
+      }
+    }
+
+    // Fallback memory update
+    for (const u of this.fallbackUsers.values()) {
+      if (u.id === userId) {
+        u.verificationStatus = status;
+        return true;
+      }
+    }
+    return true;
   }
 
   public getDbStatus() {

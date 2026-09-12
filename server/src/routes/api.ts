@@ -365,7 +365,10 @@ apiRouter.post('/cases/:id/feedback', (req, res) => {
     // Ensure a work order ticket exists in Council Dispatch Work Orders
     const existingTicket = store.getTickets().find(t => t.caseId === id);
     if (!existingTicket && updatedCase) {
-      const safeRoute = calculateSafeRoute([updatedCase.location.lat, updatedCase.location.lng]);
+      const safeRoute = calculateSafeRoute(
+        [updatedCase.location.lat, updatedCase.location.lng],
+        [updatedCase.location.lat + 0.01, updatedCase.location.lng + 0.01]
+      );
       store.addTicket({
         id: `ticket-${Date.now()}`,
         caseId: id,
@@ -384,6 +387,18 @@ apiRouter.post('/cases/:id/feedback', (req, res) => {
   }
 
   res.json({ log, case: store.getCaseById(id), tickets: store.getTickets() });
+});
+
+// 7b. Delete / Remove Hazard Case
+apiRouter.delete('/cases/:id', (req, res) => {
+  const { id } = req.params;
+  const deleted = store.deleteCase(id);
+  if (!deleted) {
+    return res.status(404).json({ error: 'Case not found' });
+  }
+  // Remove associated ticket if any
+  store.deleteTicketByCaseId(id);
+  res.json({ success: true, message: `Case ${id} removed successfully.` });
 });
 
 // 8. System Config Update

@@ -42,14 +42,14 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border-b border-slate-800/80 px-4 py-2.5 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center space-x-2 text-cyan-400 font-bold font-mono shrink-0">
+    <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-3 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+        <div className="flex items-center space-x-2 text-cyan-400 font-bold shrink-0">
           <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />
-          <span className="text-[11px] uppercase tracking-wider">1-Click Live Test Scenarios:</span>
+          <span className="text-xs uppercase tracking-wider font-extrabold text-cyan-300">Quick Test Scenarios:</span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Demo 1: Flood Report */}
           <button
             onClick={() =>
@@ -72,7 +72,7 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
               )
             }
             disabled={runningDemo !== null}
-            className="flex items-center space-x-1.5 bg-blue-950/80 hover:bg-blue-900/90 text-blue-300 border border-blue-800/70 px-2.5 py-1 rounded-xl transition text-[11px] font-medium"
+            className="flex items-center space-x-2 bg-blue-950/90 hover:bg-blue-900 text-blue-200 border border-blue-700/80 px-3 py-1.5 rounded-xl transition text-xs font-bold shadow"
           >
             <span>🌊 1. Citizen Flood Report</span>
           </button>
@@ -89,7 +89,7 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
               )
             }
             disabled={runningDemo !== null}
-            className="flex items-center space-x-1.5 bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 border border-cyan-800/70 px-2.5 py-1 rounded-xl transition text-[11px] font-medium"
+            className="flex items-center space-x-2 bg-cyan-950/90 hover:bg-cyan-900 text-cyan-200 border border-cyan-700/80 px-3 py-1.5 rounded-xl transition text-xs font-bold shadow"
           >
             <span>⚡ 2. Storm Sensor Surge</span>
           </button>
@@ -106,9 +106,9 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
               )
             }
             disabled={runningDemo !== null}
-            className="flex items-center space-x-1.5 bg-purple-950/80 hover:bg-purple-900/90 text-purple-300 border border-purple-800/70 px-2.5 py-1 rounded-xl transition text-[11px] font-medium"
+            className="flex items-center space-x-2 bg-purple-950/90 hover:bg-purple-900 text-purple-200 border border-purple-700/80 px-3 py-1.5 rounded-xl transition text-xs font-bold shadow"
           >
-            <span>🏠 3. Match Shelter &amp; Evacuate</span>
+            <span>🏠 3. Match Shelter</span>
           </button>
 
           {/* Demo 4: Field Crew Clearance */}
@@ -126,9 +126,9 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
               )
             }
             disabled={runningDemo !== null}
-            className="flex items-center space-x-1.5 bg-emerald-950/80 hover:bg-emerald-900/90 text-emerald-300 border border-emerald-800/70 px-2.5 py-1 rounded-xl transition text-[11px] font-medium"
+            className="flex items-center space-x-2 bg-emerald-950/90 hover:bg-emerald-900 text-emerald-200 border border-emerald-700/80 px-3 py-1.5 rounded-xl transition text-xs font-bold shadow"
           >
-            <span>🚒 4. Field Crew Resolves Hazard</span>
+            <span>🚒 4. Field Crew Resolve</span>
           </button>
 
           {/* Demo 5: Spam Rejection */}
@@ -150,9 +150,9 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
               )
             }
             disabled={runningDemo !== null}
-            className="flex items-center space-x-1.5 bg-rose-950/80 hover:bg-rose-900/90 text-rose-300 border border-rose-800/70 px-2.5 py-1 rounded-xl transition text-[11px] font-medium"
+            className="flex items-center space-x-2 bg-rose-950/90 hover:bg-rose-900 text-rose-200 border border-rose-700/80 px-3 py-1.5 rounded-xl transition text-xs font-bold shadow"
           >
-            <span>🐱 5. Test AI Spam Filter</span>
+            <span>🐱 5. AI Spam Filter</span>
           </button>
         </div>
       </div>

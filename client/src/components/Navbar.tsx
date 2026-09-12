@@ -1,19 +1,10 @@
 import React from 'react';
 import { 
   ShieldAlert, 
-  User, 
-  Building2, 
-  Truck, 
-  Home, 
-  Settings2, 
-  Radio, 
   BookOpen,
-  Sparkles,
-  LayoutDashboard,
   LogIn,
   LogOut,
-  UserCheck,
-  Lock
+  UserCheck
 } from 'lucide-react';
 
 export type UserRole = 'LANDING' | 'CITIZEN' | 'COUNCIL_OFFICER' | 'FIELD_CREW' | 'RELIEF_DESK' | 'SYSTEM_ADMIN';
@@ -41,117 +32,58 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenAuthModal,
   onLogout,
 }) => {
-  const roles: { id: UserRole; label: string; icon: any; badge?: number; color: string }[] = [
-    {
-      id: 'LANDING',
-      label: 'Home Overview',
-      icon: LayoutDashboard,
-      color: 'hover:bg-cyan-600/20 text-cyan-400',
-    },
-    {
-      id: 'CITIZEN',
-      label: 'Citizen Portal',
-      icon: User,
-      color: 'hover:bg-blue-600/20 text-blue-400',
-    },
-    {
-      id: 'COUNCIL_OFFICER',
-      label: 'Council Control',
-      icon: Building2,
-      badge: openTicketCount,
-      color: 'hover:bg-amber-600/20 text-amber-400',
-    },
-    {
-      id: 'FIELD_CREW',
-      label: 'Field Crew',
-      icon: Truck,
-      badge: openTicketCount > 0 ? openTicketCount : undefined,
-      color: 'hover:bg-emerald-600/20 text-emerald-400',
-    },
-    {
-      id: 'RELIEF_DESK',
-      label: 'Relief & Shelters',
-      icon: Home,
-      badge: unassignedReliefCount > 0 ? unassignedReliefCount : undefined,
-      color: 'hover:bg-purple-600/20 text-purple-400',
-    },
-    {
-      id: 'SYSTEM_ADMIN',
-      label: 'Admin & AI Tuning',
-      icon: Settings2,
-      color: 'hover:bg-slate-600/20 text-slate-300',
-    },
-  ];
 
   return (
-    <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <header className="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-50 shadow-2xl shadow-cyan-950/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2">
+        <div className="flex items-center justify-between h-20 gap-4">
+          
           {/* Brand Logo & Title */}
           <button 
             onClick={() => onRoleChange('LANDING')}
-            className="flex items-center space-x-3 shrink-0 text-left hover:opacity-90 transition"
+            className="flex items-center space-x-3.5 shrink-0 text-left hover:opacity-95 transition group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-blue-400/30">
-              <ShieldAlert className="w-6 h-6 text-white" />
+            <div className="relative">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 border border-cyan-400/50 group-hover:scale-105 transition-transform duration-200">
+                <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7 text-white drop-shadow-md" />
+              </div>
+              <span className="absolute -bottom-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500 border border-slate-900"></span>
+              </span>
             </div>
+
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-extrabold text-lg tracking-wider text-white">RESQ<span className="text-cyan-400">CITY</span></span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-mono">
-                  Topic 04
+                <span className="font-black text-xl sm:text-2xl tracking-wider text-white">
+                  RESQ<span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">CITY</span>
+                </span>
+                <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/80 font-mono font-extrabold tracking-wide">
+                  v2.0
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 hidden sm:block">Urban Flood & Road Hazard Coordination System</p>
+              <p className="text-xs text-slate-300 hidden md:block font-medium tracking-tight">Urban Flood &amp; Disaster Emergency Engine</p>
             </div>
           </button>
 
-          {/* Role Navigation Switcher */}
-          <nav className="flex items-center space-x-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
-            {roles.map((r) => {
-              const Icon = r.icon;
-              const isActive = currentRole === r.id;
-              const isLocked = !currentUser && r.id !== 'LANDING';
-
-              return (
-                <button
-                  key={r.id}
-                  onClick={() => {
-                    if (isLocked) {
-                      onOpenAuthModal(r.id);
-                    } else {
-                      onRoleChange(r.id);
-                    }
-                  }}
-                  className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    isActive
-                      ? 'bg-slate-800 text-white shadow-md border border-slate-700'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
-                  <span className="hidden md:inline">{r.label}</span>
-                  {isLocked && (
-                    <Lock className="w-3 h-3 text-slate-500" />
-                  )}
-                  {r.badge !== undefined && r.badge > 0 && !isLocked && (
-                    <span className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold leading-none text-white bg-rose-600 rounded-full">
-                      {r.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Active Portal Badge Indicator */}
+          <div className="hidden md:flex items-center space-x-2 bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800 text-xs font-mono font-bold text-slate-300 shadow-inner">
+            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/50" />
+            <span className="text-slate-400">ACTIVE PORTAL:</span>
+            <span className="text-cyan-300 font-extrabold uppercase tracking-wide">
+              {currentRole === 'LANDING' ? 'OVERVIEW' : currentRole.replace('_', ' ')}
+            </span>
+          </div>
 
           {/* Actions & User Auth */}
-          <div className="flex items-center space-x-2 text-xs">
+          <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
             {currentUser ? (
-              <div className="flex items-center space-x-2 bg-slate-950 p-1 pl-2.5 rounded-xl border border-slate-800">
-                <div className="flex items-center space-x-1.5">
-                  <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="font-semibold text-white hidden xl:inline truncate max-w-[120px]">{currentUser.fullName}</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+              <div className="flex items-center space-x-2 bg-slate-950/90 px-3 py-2 rounded-xl border border-slate-800/90 shadow-sm">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50" />
+                  <UserCheck className="w-4 h-4 text-cyan-400" />
+                  <span className="font-bold text-xs sm:text-sm text-white hidden xl:inline truncate max-w-[130px]">{currentUser.fullName}</span>
+                  <span className="text-[10px] sm:text-xs font-mono font-extrabold px-2 py-0.5 rounded-md bg-cyan-950/90 text-cyan-300 border border-cyan-800/80 uppercase">
                     {currentUser.role}
                   </span>
                 </div>
@@ -160,27 +92,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                   title="Log out of session"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => onOpenAuthModal()}
-                className="flex items-center space-x-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold px-3 py-1.5 rounded-xl shadow-md transition"
+                className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-extrabold px-4 py-2.5 rounded-xl shadow-lg shadow-cyan-500/20 transition transform hover:-translate-y-0.5 active:translate-y-0 text-xs sm:text-sm"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="w-4 h-4" />
                 <span>Sign In / Register</span>
               </button>
             )}
 
             <button
               onClick={onOpenTestingGuide}
-              className="flex items-center space-x-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 px-3 py-1.5 rounded-xl font-medium transition"
+              className="flex items-center space-x-2 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700/80 hover:border-cyan-500/50 px-3.5 py-2.5 rounded-xl font-bold transition shadow-sm text-xs sm:text-sm"
             >
-              <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+              <BookOpen className="w-4 h-4 text-cyan-400" />
               <span className="hidden sm:inline">Guide</span>
             </button>
           </div>
+
         </div>
       </div>
     </header>

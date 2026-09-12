@@ -49,16 +49,16 @@ const ALL_SPECIAL_NEEDS = Object.keys(NEED_BADGE);
 
 // Urgency badge colours
 const URGENCY_COLOR: Record<string, string> = {
-  CRITICAL: 'bg-rose-950 text-rose-300 border-rose-700',
-  HIGH:     'bg-orange-950 text-orange-300 border-orange-700',
-  MEDIUM:   'bg-amber-950 text-amber-300 border-amber-700',
-  LOW:      'bg-slate-800 text-slate-300 border-slate-600',
+  CRITICAL: 'bg-rose-950 text-rose-300 border-rose-700 font-bold',
+  HIGH:     'bg-orange-950 text-orange-300 border-orange-700 font-bold',
+  MEDIUM:   'bg-amber-950 text-amber-300 border-amber-700 font-bold',
+  LOW:      'bg-slate-800 text-slate-300 border-slate-600 font-bold',
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  ASSIGNED:   'bg-indigo-950 text-indigo-300 border-indigo-700',
-  DISPATCHED: 'bg-amber-950 text-amber-300 border-amber-700',
-  SHELTERED:  'bg-emerald-950 text-emerald-300 border-emerald-700',
+  ASSIGNED:   'bg-indigo-950 text-indigo-300 border-indigo-700 font-bold',
+  DISPATCHED: 'bg-amber-950 text-amber-300 border-amber-700 font-bold',
+  SHELTERED:  'bg-emerald-950 text-emerald-300 border-emerald-700 font-bold',
 };
 
 // Default form state
@@ -341,16 +341,16 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
     <div className="space-y-6">
 
       {/* Stats Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
         {/* Title row */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-              <Home className="w-5 h-5" />
+          <div className="flex items-center space-x-3.5">
+            <div className="p-3 rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/30 shadow">
+              <Home className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Relief &amp; Shelter Coordination Desk</h2>
-              <p className="text-xs text-slate-400">
+              <h2 className="text-lg font-extrabold text-white tracking-wide">Relief &amp; Shelter Coordination Desk</h2>
+              <p className="text-sm text-slate-300 mt-0.5 font-medium">
                 Match stranded citizens to nearest shelters by capacity, supplies, and safe transit routes.
               </p>
             </div>
@@ -359,35 +359,35 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
           {/* Toggle manual-request form */}
           <button
             onClick={() => { setFormOpen(v => !v); setFormStatus(null); }}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-purple-700/30 hover:bg-purple-700/50 border border-purple-600/40 text-purple-300 text-xs font-semibold transition"
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/50 text-purple-200 text-xs sm:text-sm font-bold transition shadow"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>Manual Rescue Request</span>
-            {formOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {formOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
 
         {/* Stats pill row */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Total Shelters</p>
-            <p className="text-xl font-bold text-white">{state.shelters.length}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center shadow">
+            <p className="text-xs uppercase tracking-wider text-slate-300 font-mono font-bold">Total Shelters</p>
+            <p className="text-2xl font-extrabold text-white mt-1">{state.shelters.length}</p>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Open Shelters</p>
-            <p className="text-xl font-bold text-emerald-400">{openShelters}</p>
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center shadow">
+            <p className="text-xs uppercase tracking-wider text-slate-300 font-mono font-bold">Open Shelters</p>
+            <p className="text-2xl font-extrabold text-emerald-400 mt-1">{openShelters}</p>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Free Beds</p>
-            <p className="text-xl font-bold text-cyan-400">{totalFreeBeds}</p>
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center shadow">
+            <p className="text-xs uppercase tracking-wider text-slate-300 font-mono font-bold">Free Beds</p>
+            <p className="text-2xl font-extrabold text-cyan-400 mt-1">{totalFreeBeds}</p>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Pending</p>
-            <p className="text-xl font-bold text-amber-400">{sortedQueued.length}</p>
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center shadow">
+            <p className="text-xs uppercase tracking-wider text-slate-300 font-mono font-bold">Pending</p>
+            <p className="text-2xl font-extrabold text-amber-400 mt-1">{sortedQueued.length}</p>
           </div>
-          <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-center">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500 font-mono">Assigned</p>
-            <p className="text-xl font-bold text-purple-400">{assignedRequests.length}</p>
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-center shadow">
+            <p className="text-xs uppercase tracking-wider text-slate-300 font-mono font-bold">Assigned</p>
+            <p className="text-2xl font-extrabold text-purple-400 mt-1">{assignedRequests.length}</p>
           </div>
         </div>
 
@@ -395,64 +395,64 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
         {formOpen && (
           <form
             onSubmit={handleFormSubmit}
-            className="border border-purple-800/40 bg-slate-950 rounded-xl p-4 space-y-4 mt-1"
+            className="border border-purple-700/60 bg-slate-950 rounded-2xl p-5 space-y-4 shadow-lg"
           >
-            <h3 className="text-xs font-bold uppercase tracking-wider text-purple-300 flex items-center space-x-2">
-              <LifeBuoy className="w-4 h-4" />
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-purple-300 flex items-center space-x-2 border-b border-slate-800 pb-3">
+              <LifeBuoy className="w-5 h-5 text-purple-400" />
               <span>New Manual Rescue Request</span>
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               {/* Citizen Name */}
-              <div className="space-y-1">
-                <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Citizen Name *</label>
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Citizen Name *</label>
                 <input
                   type="text"
                   value={form.citizenName}
                   onChange={e => setForm(f => ({ ...f, citizenName: e.target.value }))}
                   placeholder="e.g. Kasun Perera"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-medium"
                 />
               </div>
               {/* Phone */}
-              <div className="space-y-1">
-                <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Contact Phone *</label>
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Contact Phone *</label>
                 <div className="relative">
-                  <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="tel"
                     value={form.citizenPhone}
                     onChange={e => setForm(f => ({ ...f, citizenPhone: e.target.value }))}
                     placeholder="+94 71 234 5678"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-medium"
                   />
                 </div>
               </div>
               {/* Household Count */}
-              <div className="space-y-1">
-                <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Household Count</label>
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Household Count</label>
                 <div className="relative">
-                  <Users className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="number"
                     min={1}
                     value={form.householdCount}
                     onChange={e => setForm(f => ({ ...f, householdCount: Math.max(1, Number(e.target.value)) }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-purple-400 font-bold"
                   />
                 </div>
               </div>
               {/* City Ward & GPS Auto-Detect Selector */}
-              <div className="space-y-1 sm:col-span-2">
+              <div className="space-y-1.5 sm:col-span-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">
+                  <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">
                     City Ward / Location Preset
                   </label>
                   <button
                     type="button"
                     onClick={handleAutoDetectGPS}
                     disabled={isDetectingGps}
-                    className="text-[11px] text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1 transition"
+                    className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center space-x-1 transition"
                   >
                     <MapPin className="w-3.5 h-3.5 text-cyan-400 animate-bounce" />
                     <span>{isDetectingGps ? 'Locating GPS…' : '📍 Auto-Detect GPS'}</span>
@@ -470,11 +470,11 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                       }));
                     }
                   }}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500 transition font-medium"
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-400 font-medium"
                 >
-                  <option value="">-- Choose City Ward to Auto-Fill GPS --</option>
+                  <option value="" className="bg-slate-900">-- Choose City Ward to Auto-Fill GPS --</option>
                   {state.wards.map(w => (
-                    <option key={w.id} value={w.id}>
+                    <option key={w.id} value={w.id} className="bg-slate-900">
                       📍 {w.name} ({w.center[0].toFixed(4)}, {w.center[1].toFixed(4)})
                     </option>
                   ))}
@@ -482,39 +482,39 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
               </div>
 
               {/* Road Name */}
-              <div className="space-y-1">
-                <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Road / Address</label>
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Road / Address</label>
                 <div className="relative">
-                  <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
+                  <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     type="text"
                     value={form.roadName}
                     onChange={e => setForm(f => ({ ...f, roadName: e.target.value }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-8 pr-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 font-medium"
                   />
                 </div>
               </div>
 
               {/* Lat & Lng Inputs */}
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Latitude</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Latitude</label>
                   <input
                     type="number"
                     step="any"
                     value={form.lat}
                     onChange={e => setForm(f => ({ ...f, lat: parseFloat(e.target.value) || 0 }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-emerald-400 font-mono focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-cyan-300 font-mono font-bold focus:outline-none focus:border-purple-400"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Longitude</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Longitude</label>
                   <input
                     type="number"
                     step="any"
                     value={form.lng}
                     onChange={e => setForm(f => ({ ...f, lng: parseFloat(e.target.value) || 0 }))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-emerald-400 font-mono focus:outline-none focus:border-purple-500 transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-cyan-300 font-mono font-bold focus:outline-none focus:border-purple-400"
                   />
                 </div>
               </div>
@@ -522,7 +522,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
 
             {/* Special Needs checkboxes */}
             <div className="space-y-2">
-              <label className="text-[11px] text-slate-400 font-mono uppercase tracking-wide">Special Needs</label>
+              <label className="text-xs text-slate-300 font-bold uppercase tracking-wide">Special Needs</label>
               <div className="flex flex-wrap gap-2">
                 {ALL_SPECIAL_NEEDS.map(need => {
                   const checked = form.specialNeeds.includes(need);
@@ -531,10 +531,10 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                       key={need}
                       type="button"
                       onClick={() => handleToggleNeed(need)}
-                      className={`px-2.5 py-1 rounded-lg border text-[11px] font-medium transition ${
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition ${
                         checked
-                          ? `${NEED_BADGE[need]} ring-1 ring-purple-500/50`
-                          : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                          ? `${NEED_BADGE[need]} ring-1 ring-purple-400`
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-slate-500'
                       }`}
                     >
                       {checked ? '✓ ' : ''}{need}
@@ -546,21 +546,21 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
 
             {/* Status message */}
             {formStatus && (
-              <div className={`flex items-start space-x-2 p-3 rounded-lg border text-xs ${
+              <div className={`flex items-start space-x-2.5 p-3.5 rounded-xl border text-xs font-semibold ${
                 formStatus.type === 'success'
-                  ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-                  : 'bg-rose-950/60 border-rose-800 text-rose-300'
+                  ? 'bg-emerald-950/80 border-emerald-700 text-emerald-200'
+                  : 'bg-rose-950/80 border-rose-700 text-rose-200'
               }`}>
                 {formStatus.type === 'success'
-                  ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
-                  : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+                  ? <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-400" />
+                  : <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400" />}
                 <span>{formStatus.msg}</span>
                 <button
                   type="button"
                   onClick={() => setFormStatus(null)}
-                  className="ml-auto shrink-0 opacity-60 hover:opacity-100"
+                  className="ml-auto shrink-0 text-slate-400 hover:text-white"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -569,16 +569,16 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-extrabold py-3.5 px-6 rounded-xl text-sm transition flex items-center justify-center space-x-2.5 shadow-lg shadow-purple-900/40"
             >
               {submitting ? (
                 <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-5 h-5 animate-spin" />
                   <span>Submitting Request…</span>
                 </>
               ) : (
                 <>
-                  <LifeBuoy className="w-4 h-4" />
+                  <LifeBuoy className="w-5 h-5" />
                   <span>Submit Rescue Request</span>
                 </>
               )}
@@ -588,117 +588,117 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
       </div>
 
       {/* Shelter Grid Overview */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 className="text-sm font-extrabold uppercase tracking-wider text-slate-200">
             City Relief Shelters — Live Capacity &amp; Logistics ({state.shelters.length} Shelters)
           </h3>
           <button
             type="button"
             onClick={() => setAddShelterOpen(!addShelterOpen)}
-            className="flex items-center space-x-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow"
+            className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-4 h-4" />
             <span>{addShelterOpen ? 'Close Form' : '+ Add New Shelter'}</span>
           </button>
         </div>
 
         {addShelterOpen && (
-          <form onSubmit={handleCreateShelter} className="bg-slate-900 border border-emerald-800/80 p-4 rounded-xl space-y-4 shadow-lg">
+          <form onSubmit={handleCreateShelter} className="bg-slate-900 border border-emerald-700/80 p-5 rounded-2xl space-y-4 shadow-xl">
             <div className="flex items-center space-x-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-              <Building2 className="w-4 h-4" />
+              <Building2 className="w-5 h-5" />
               <span>Register New City Relief Shelter</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Shelter Name *</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">Shelter Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Royal College Sports Complex"
                   value={newShelter.name}
                   onChange={e => setNewShelter(s => ({ ...s, name: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">City Ward *</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">City Ward *</label>
                 <select
                   value={newShelter.wardId}
                   onChange={e => setNewShelter(s => ({ ...s, wardId: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500"
                 >
                   {state.wards.map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
+                    <option key={w.id} value={w.id} className="bg-slate-900">{w.name}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Total Bed Capacity</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">Total Bed Capacity</label>
                 <input
                   type="number"
                   min={10}
                   value={newShelter.totalCapacity}
                   onChange={e => setNewShelter(s => ({ ...s, totalCapacity: Number(e.target.value) }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-bold focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Road / Address</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">Road / Address</label>
                 <input
                   type="text"
                   value={newShelter.roadName}
                   onChange={e => setNewShelter(s => ({ ...s, roadName: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Contact Phone</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">Contact Phone</label>
                 <input
                   type="text"
                   value={newShelter.contactPhone}
                   onChange={e => setNewShelter(s => ({ ...s, contactPhone: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-slate-400 block mb-1">Initial Food Packs</label>
+                <label className="text-xs text-slate-300 block mb-1.5 font-semibold">Initial Food Packs</label>
                 <input
                   type="number"
                   value={newShelter.foodPacks}
                   onChange={e => setNewShelter(s => ({ ...s, foodPacks: Number(e.target.value) }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2 pt-1">
+            <div className="flex justify-end space-x-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setAddShelterOpen(false)}
-                className="px-3 py-1.5 rounded-lg border border-slate-700 text-slate-400 hover:text-white text-xs"
+                className="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-xs font-semibold"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isCreatingShelter}
-                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-1.5"
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center space-x-2 shadow"
               >
-                {isCreatingShelter ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                {isCreatingShelter ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                 <span>{isCreatingShelter ? 'Saving…' : 'Save New Shelter'}</span>
               </button>
             </div>
           </form>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {state.shelters.map((sh) => {
             const occupancyPct  = Math.round((sh.currentOccupancy / sh.totalCapacity) * 100);
             const isFull        = occupancyPct >= 95 || !sh.isOpen;
@@ -706,16 +706,16 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
             const isRestockOpen = restockOpen[sh.id] ?? false;
 
             return (
-              <div key={sh.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3 shadow">
+              <div key={sh.id} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
 
                 {/* Shelter name + status badge + delete button */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className="font-bold text-white text-xs leading-snug">{sh.name}</h4>
-                    <p className="text-[10px] text-slate-500 font-mono">{sh.location.roadName}</p>
+                    <h4 className="font-bold text-white text-base leading-snug">{sh.name}</h4>
+                    <p className="text-xs text-slate-400 font-mono mt-0.5">{sh.location.roadName}</p>
                   </div>
                   <div className="flex items-center space-x-1 shrink-0">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border ${
+                    <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border ${
                       isFull
                         ? 'bg-rose-950 text-rose-300 border-rose-800'
                         : 'bg-emerald-950 text-emerald-300 border-emerald-800'
@@ -732,46 +732,46 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           handleStartEditShelter(sh);
                         }
                       }}
-                      className={`p-1 rounded transition ${
+                      className={`p-1.5 rounded-lg transition ${
                         editingShelterId === sh.id
                           ? 'bg-purple-900 text-purple-300'
                           : 'hover:bg-slate-800 text-slate-400 hover:text-cyan-300'
                       }`}
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
                       title="Remove Shelter"
                       onClick={() => handleDeleteShelter(sh.id, sh.name)}
-                      className="p-1 rounded hover:bg-rose-950 text-slate-500 hover:text-rose-400 transition"
+                      className="p-1.5 rounded-lg hover:bg-rose-950 text-slate-500 hover:text-rose-400 transition"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 {editingShelterId === sh.id ? (
-                  <div className="bg-slate-950 p-3 rounded-lg border border-purple-800/80 space-y-2.5 text-xs animate-fadeIn">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-purple-400">
+                  <div className="bg-slate-950 p-4 rounded-xl border border-purple-700/80 space-y-3 text-xs">
+                    <div className="flex items-center justify-between font-bold text-purple-300 text-xs">
                       <span>✏️ Edit Beds &amp; Resources</span>
                       <button
                         type="button"
                         onClick={() => setEditingShelterId(null)}
-                        className="text-slate-500 hover:text-white"
+                        className="text-slate-400 hover:text-white"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <div className="grid grid-cols-2 gap-2.5 text-xs">
                       <div>
                         <label className="text-slate-400 block mb-0.5 font-mono">Total Beds</label>
                         <input
                           type="number"
                           value={editForm.totalCapacity}
                           onChange={e => setEditForm(f => ({ ...f, totalCapacity: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono font-bold"
                         />
                       </div>
                       <div>
@@ -780,7 +780,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           type="number"
                           value={editForm.currentOccupancy}
                           onChange={e => setEditForm(f => ({ ...f, currentOccupancy: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono font-bold"
                         />
                       </div>
                       <div>
@@ -789,7 +789,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           type="number"
                           value={editForm.foodPacks}
                           onChange={e => setEditForm(f => ({ ...f, foodPacks: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono"
                         />
                       </div>
                       <div>
@@ -798,7 +798,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           type="number"
                           value={editForm.waterLitres}
                           onChange={e => setEditForm(f => ({ ...f, waterLitres: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono"
                         />
                       </div>
                       <div>
@@ -807,7 +807,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           type="number"
                           value={editForm.medicalKits}
                           onChange={e => setEditForm(f => ({ ...f, medicalKits: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono"
                         />
                       </div>
                       <div>
@@ -816,16 +816,16 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                           type="number"
                           value={editForm.blankets}
                           onChange={e => setEditForm(f => ({ ...f, blankets: Number(e.target.value) }))}
-                          className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white font-mono"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-mono"
                         />
                       </div>
                     </div>
 
-                    <div className="flex justify-end space-x-1.5 pt-1">
+                    <div className="flex justify-end space-x-2 pt-1">
                       <button
                         type="button"
                         onClick={() => setEditingShelterId(null)}
-                        className="px-2 py-1 rounded bg-slate-800 text-slate-400 text-[10px]"
+                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs font-semibold"
                       >
                         Cancel
                       </button>
@@ -833,9 +833,9 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                         type="button"
                         disabled={isSavingEdit}
                         onClick={() => handleSaveEditShelter(sh.id)}
-                        className="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[10px] flex items-center space-x-1"
+                        className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center space-x-1.5"
                       >
-                        {isSavingEdit ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                        {isSavingEdit ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                         <span>{isSavingEdit ? 'Saving…' : 'Save Changes'}</span>
                       </button>
                     </div>
@@ -845,18 +845,18 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                     {/* Large occupancy % */}
                     <div className="flex items-end justify-between">
                       <div>
-                        <p className={`text-3xl font-black leading-none ${isFull ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          {occupancyPct}<span className="text-sm font-normal text-slate-400">%</span>
+                        <p className={`text-4xl font-extrabold leading-none ${isFull ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          {occupancyPct}<span className="text-base font-normal text-slate-400">%</span>
                         </p>
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5">Occupied · {freeBeds} beds free</p>
+                        <p className="text-xs text-slate-300 font-mono mt-1 font-bold">Occupied · {freeBeds} beds free</p>
                       </div>
-                      <div className="text-right text-[10px] font-mono text-slate-500">
+                      <div className="text-right text-xs font-mono font-bold text-slate-400">
                         {sh.currentOccupancy} / {sh.totalCapacity}
                       </div>
                     </div>
 
                     {/* Progress bar */}
-                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${isFull ? 'bg-rose-500' : 'bg-purple-500'}`}
                         style={{ width: `${Math.min(occupancyPct, 100)}%` }}
@@ -864,33 +864,33 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                     </div>
 
                     {/* Supplies */}
-                    <div className="bg-slate-950 p-2 rounded-lg border border-slate-800/80 space-y-1 text-[10px] font-mono text-slate-300">
+                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5 text-xs font-mono text-slate-200">
                       <div className="flex justify-between items-center">
-                        <span className="flex items-center space-x-1">
-                          <Utensils className="w-3 h-3 text-cyan-500" />
+                        <span className="flex items-center space-x-1.5">
+                          <Utensils className="w-4 h-4 text-cyan-400" />
                           <span>Food Packs</span>
                         </span>
-                        <span className="text-cyan-400">{sh.supplies.foodPacks}</span>
+                        <span className="text-cyan-300 font-bold">{sh.supplies.foodPacks}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="flex items-center space-x-1">
-                          <Droplets className="w-3 h-3 text-blue-400" />
+                        <span className="flex items-center space-x-1.5">
+                          <Droplets className="w-4 h-4 text-blue-400" />
                           <span>Clean Water</span>
                         </span>
-                        <span className="text-cyan-400">{sh.supplies.waterLitres} L</span>
+                        <span className="text-cyan-300 font-bold">{sh.supplies.waterLitres} L</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="flex items-center space-x-1">
-                          <Stethoscope className="w-3 h-3 text-rose-400" />
+                        <span className="flex items-center space-x-1.5">
+                          <Stethoscope className="w-4 h-4 text-rose-400" />
                           <span>Med Kits</span>
                         </span>
-                        <span className="text-cyan-400">{sh.supplies.medicalKits}</span>
+                        <span className="text-cyan-300 font-bold">{sh.supplies.medicalKits}</span>
                       </div>
                     </div>
 
                     {/* Ward / phone */}
-                    <div className="text-[10px] text-slate-500 font-mono">
-                      Ward: {sh.wardId} · {sh.contactPhone}
+                    <div className="text-xs text-slate-400 font-mono">
+                      Ward: <span className="text-slate-200 font-bold">{sh.wardId}</span> · {sh.contactPhone}
                     </div>
 
                     {/* Restock panel */}
@@ -898,36 +898,36 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                       <button
                         type="button"
                         onClick={() => setRestockOpen(prev => ({ ...prev, [sh.id]: !isRestockOpen }))}
-                        className="w-full flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold transition"
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition"
                       >
-                        <span className="flex items-center space-x-1.5">
-                          <Package className="w-3.5 h-3.5 text-purple-400" />
+                        <span className="flex items-center space-x-2">
+                          <Package className="w-4 h-4 text-purple-400" />
                           <span>Quick Restock</span>
                         </span>
-                        {isRestockOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        {isRestockOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
 
                       {isRestockOpen && (
-                        <div className="mt-2 grid grid-cols-3 gap-1.5">
+                        <div className="mt-2.5 grid grid-cols-3 gap-2">
                           <button
                             onClick={() => handleRestockItem(sh.id, { foodPacks: 50, waterLitres: 0, medicalKits: 0 })}
-                            className="flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg bg-cyan-950/60 hover:bg-cyan-900/60 border border-cyan-800/60 text-cyan-300 text-[10px] font-bold transition"
+                            className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-700 text-cyan-200 text-xs font-bold transition shadow"
                           >
-                            <Utensils className="w-3 h-3" />
+                            <Utensils className="w-3.5 h-3.5 text-cyan-400" />
                             <span>+50 Food</span>
                           </button>
                           <button
                             onClick={() => handleRestockItem(sh.id, { foodPacks: 0, waterLitres: 500, medicalKits: 0 })}
-                            className="flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg bg-blue-950/60 hover:bg-blue-900/60 border border-blue-800/60 text-blue-300 text-[10px] font-bold transition"
+                            className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-blue-950/80 hover:bg-blue-900 border border-blue-700 text-blue-200 text-xs font-bold transition shadow"
                           >
-                            <Droplets className="w-3 h-3" />
+                            <Droplets className="w-3.5 h-3.5 text-blue-400" />
                             <span>+500L H2O</span>
                           </button>
                           <button
                             onClick={() => handleRestockItem(sh.id, { foodPacks: 0, waterLitres: 0, medicalKits: 5 })}
-                            className="flex flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg bg-rose-950/60 hover:bg-rose-900/60 border border-rose-800/60 text-rose-300 text-[10px] font-bold transition"
+                            className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-700 text-rose-200 text-xs font-bold transition shadow"
                           >
-                            <Stethoscope className="w-3 h-3" />
+                            <Stethoscope className="w-3.5 h-3.5 text-rose-400" />
                             <span>+5 Kits</span>
                           </button>
                         </div>
@@ -947,22 +947,22 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
 
         {/* Left: Queued requests */}
         <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-              <LifeBuoy className="w-4 h-4 text-rose-400" />
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 className="text-base font-extrabold text-white uppercase tracking-wider flex items-center space-x-2.5">
+              <LifeBuoy className="w-5 h-5 text-rose-400" />
               <span>Pending Evacuation Requests ({sortedQueued.length})</span>
             </h3>
             {sortedQueued.some(r => (r.specialNeeds?.length ?? 0) > 0) && (
-              <span className="text-[10px] bg-amber-950 text-amber-300 border border-amber-700 px-2 py-0.5 rounded font-mono">
+              <span className="text-xs bg-amber-950 text-amber-300 border border-amber-700 px-2.5 py-0.5 rounded font-mono font-bold">
                 Priority Sorted
               </span>
             )}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {sortedQueued.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 text-xs">
-                <ShieldCheck className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <div className="text-center py-12 text-slate-400 text-sm">
+                <ShieldCheck className="w-10 h-10 mx-auto mb-2 opacity-40 text-emerald-400" />
                 No unassigned rescue requests in queue.
               </div>
             ) : (
@@ -971,44 +971,44 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                 return (
                   <div
                     key={req.id}
-                    className={`bg-slate-950 border p-4 rounded-xl space-y-3 ${
-                      hasNeeds ? 'border-amber-800/60 ring-1 ring-amber-700/20' : 'border-slate-800'
+                    className={`bg-slate-950 border p-5 rounded-2xl space-y-3.5 shadow ${
+                      hasNeeds ? 'border-amber-700/80 ring-1 ring-amber-700/30' : 'border-slate-800'
                     }`}
                   >
                     {/* Name + urgency */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-white text-xs truncate">{req.citizenName}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border shrink-0 ${URGENCY_COLOR[req.urgency] ?? URGENCY_COLOR.LOW}`}>
+                      <span className="font-bold text-white text-base truncate">{req.citizenName}</span>
+                      <span className={`px-3 py-1 rounded-lg text-xs font-mono border shrink-0 ${URGENCY_COLOR[req.urgency] ?? URGENCY_COLOR.LOW}`}>
                         {req.urgency}
                       </span>
                     </div>
 
                     {/* Details */}
-                    <div className="text-xs text-slate-300 space-y-1">
-                      <div className="flex items-center space-x-1.5">
-                        <Users className="w-3.5 h-3.5 text-slate-500" />
+                    <div className="text-sm text-slate-200 space-y-1.5 font-medium">
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4 text-slate-400" />
                         <span>{req.householdCount} person(s)</span>
                       </div>
-                      <div className="flex items-center space-x-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                        <span className="text-cyan-400 truncate">{req.location.roadName}</span>
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                        <span className="text-cyan-300 font-bold truncate">{req.location.roadName}</span>
                         {req.location.wardName && (
-                          <span className="text-slate-500 text-[10px]">({req.location.wardName})</span>
+                          <span className="text-slate-400 text-xs">({req.location.wardName})</span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1.5">
-                        <Phone className="w-3.5 h-3.5 text-slate-500" />
-                        <span className="font-mono text-[11px] text-slate-400">{req.citizenPhone}</span>
+                      <div className="flex items-center space-x-2">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        <span className="font-mono text-xs text-slate-300 font-bold">{req.citizenPhone}</span>
                       </div>
                     </div>
 
                     {/* Special needs badges */}
                     {hasNeeds && (
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-2">
                         {req.specialNeeds.map(need => (
                           <span
                             key={need}
-                            className={`px-2 py-0.5 rounded border text-[10px] font-semibold ${NEED_BADGE[need] ?? 'bg-slate-800 border-slate-600 text-slate-300'}`}
+                            className={`px-2.5 py-0.5 rounded-lg border text-xs font-bold ${NEED_BADGE[need] ?? 'bg-slate-800 border-slate-600 text-slate-300'}`}
                           >
                             {need}
                           </span>
@@ -1020,7 +1020,7 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                     <button
                       onClick={() => handleMatchShelter(req.id)}
                       disabled={isMatching === req.id}
-                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center space-x-2 disabled:opacity-50"
+                      className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold py-3 px-4 rounded-xl text-xs sm:text-sm transition flex items-center justify-center space-x-2 disabled:opacity-50 shadow-lg shadow-purple-950/50"
                     >
                       <Sparkles className="w-4 h-4" />
                       <span>
@@ -1038,15 +1038,15 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
 
         {/* Right: Assigned / Dispatched / Sheltered */}
         <div className="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <h3 className="text-base font-extrabold text-white uppercase tracking-wider flex items-center space-x-2.5 border-b border-slate-800 pb-3">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
             <span>Assigned Evacuations &amp; Safe Routes ({assignedRequests.length})</span>
           </h3>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {assignedRequests.length === 0 ? (
-              <div className="text-center py-10 text-slate-500 text-xs">
-                <Navigation className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <div className="text-center py-12 text-slate-400 text-sm">
+                <Navigation className="w-10 h-10 mx-auto mb-2 opacity-30 text-purple-400" />
                 No assignments yet. Match a pending request above.
               </div>
             ) : (
@@ -1056,25 +1056,25 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                 const estimatedMins  = waypointCount * 4;
 
                 return (
-                  <div key={req.id} className="bg-slate-950 border border-slate-800 p-4 rounded-xl space-y-2 text-xs">
+                  <div key={req.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3 text-sm shadow">
                     {/* Name + status */}
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-white truncate">
+                      <span className="font-bold text-white text-base truncate">
                         {req.citizenName}
-                        <span className="text-slate-400 font-normal ml-1">({req.householdCount} pax)</span>
+                        <span className="text-slate-300 font-medium ml-1.5">({req.householdCount} pax)</span>
                       </span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-mono border shrink-0 ${STATUS_COLOR[req.status] ?? 'bg-slate-800 text-slate-300 border-slate-600'}`}>
+                      <span className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold border shrink-0 ${STATUS_COLOR[req.status] ?? 'bg-slate-800 text-slate-300 border-slate-600'}`}>
                         {req.status}
                       </span>
                     </div>
 
                     {/* Special needs badges (assigned cards) */}
                     {(req.specialNeeds?.length ?? 0) > 0 && (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-1.5">
                         {req.specialNeeds.map(need => (
                           <span
                             key={need}
-                            className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${NEED_BADGE[need] ?? 'bg-slate-800 border-slate-600 text-slate-300'}`}
+                            className={`px-2 py-0.5 rounded-lg border text-xs font-bold ${NEED_BADGE[need] ?? 'bg-slate-800 border-slate-600 text-slate-300'}`}
                           >
                             {need}
                           </span>
@@ -1083,22 +1083,22 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                     )}
 
                     {/* Shelter assignment */}
-                    <div className="text-slate-400">
+                    <div className="text-slate-300 font-medium">
                       Shelter:{' '}
-                      <span className="text-purple-300 font-bold">
+                      <span className="text-purple-300 font-extrabold text-base">
                         {matchedShelter?.name ?? 'Assigned Relief Center'}
                       </span>
                     </div>
 
                     {/* Route info */}
                     {waypointCount > 0 && (
-                      <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-3 py-2">
-                        <div className="flex items-center space-x-1.5 text-[11px] text-slate-300 font-mono">
-                          <Navigation className="w-3.5 h-3.5 text-purple-400" />
+                      <div className="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5">
+                        <div className="flex items-center space-x-2 text-xs text-slate-200 font-mono font-bold">
+                          <Navigation className="w-4 h-4 text-purple-400" />
                           <span>{waypointCount} waypoints</span>
                         </div>
-                        <div className="flex items-center space-x-1.5 text-[11px] text-emerald-400 font-mono">
-                          <Clock className="w-3.5 h-3.5" />
+                        <div className="flex items-center space-x-2 text-xs text-emerald-400 font-mono font-bold">
+                          <Clock className="w-4 h-4" />
                           <span>~{estimatedMins} min ETA</span>
                         </div>
                       </div>
@@ -1108,11 +1108,11 @@ export const ReliefDesk: React.FC<ReliefDeskProps> = ({
                     {req.safeRoute && (
                       <button
                         onClick={() => onShowDetour(normalizePath(req.safeRoute))}
-                        className="text-cyan-400 hover:text-cyan-300 text-[11px] font-mono flex items-center space-x-1 transition"
+                        className="text-cyan-400 hover:text-cyan-300 text-xs font-bold font-mono flex items-center space-x-1.5 transition pt-1"
                       >
-                        <Compass className="w-3.5 h-3.5" />
+                        <Compass className="w-4 h-4 text-cyan-400" />
                         <span>Show Safe Evacuation Path on Map</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-4 h-4" />
                       </button>
                     )}
                   </div>

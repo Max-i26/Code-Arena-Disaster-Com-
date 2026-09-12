@@ -138,6 +138,12 @@ export const api = {
     });
   },
 
+  async deleteCase(caseId: string): Promise<any> {
+    return safeFetchJson(`${API_BASE}/cases/${caseId}`, {
+      method: 'DELETE',
+    });
+  },
+
   async updateConfig(configUpdates: any): Promise<any> {
     return safeFetchJson(`${API_BASE}/config`, {
       method: 'POST',
@@ -210,5 +216,25 @@ export const api = {
 
   async logout(): Promise<any> {
     return safeFetchJson(`${API_BASE}/auth/logout`, { method: 'POST' });
+  },
+
+  async getPendingVerifications(): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/pending-verifications`);
+  },
+
+  async verifyUser(userId: string, status: 'APPROVED' | 'REJECTED'): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/verify-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, status }),
+    });
+  },
+
+  async createAdmin(payload: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/create-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
   },
 };
