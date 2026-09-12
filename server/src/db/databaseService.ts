@@ -95,7 +95,7 @@ class DatabaseService {
           for (const r of data.relief_requests) if (r && r.id) this.tables.relief_requests.set(r.id, r);
         }
         if (data.sensors && Array.isArray(data.sensors)) {
-          for (const s of data.sensors) if (s && s.id) this.tables.sensors.set(s.id, s);
+          for (const s of data.sensors) if (s && (s.id || s.stationId)) this.tables.sensors.set(s.id || s.stationId, s);
         }
         if (data.ai_tuning_logs && Array.isArray(data.ai_tuning_logs)) {
           for (const l of data.ai_tuning_logs) if (l && l.id) this.tables.ai_tuning_logs.set(l.id, l);
@@ -292,7 +292,7 @@ class DatabaseService {
       this.isConnectedToMysql = true;
       console.log('[ResQCity SQL DB] Successfully connected to MySQL Engine (localhost:3306 / resqcity_db)');
 
-      // Sync embedded table records into MySQL
+      // Sync all embedded table records into MySQL
       for (const u of this.tables.users.values()) {
         try {
           await this.pool.query(
@@ -317,6 +317,32 @@ class DatabaseService {
           );
         } catch (e) { }
       }
+
+      for (const c of this.tables.cases.values()) {
+        this.saveCase(c);
+      }
+      for (const t of this.tables.tickets.values()) {
+        this.saveTicket(t);
+      }
+      for (const s of this.tables.shelters.values()) {
+        this.saveShelter(s);
+      }
+      for (const fc of this.tables.field_crews.values()) {
+        this.saveFieldCrew(fc);
+      }
+      for (const r of this.tables.relief_requests.values()) {
+        this.saveReliefRequest(r);
+      }
+      for (const s of this.tables.sensors.values()) {
+        this.saveSensor(s);
+      }
+      for (const l of this.tables.ai_tuning_logs.values()) {
+        this.saveAiLog(l);
+      }
+      for (const u of this.tables.banned_users) {
+        this.saveBannedUser(u);
+      }
+
     } catch (err: any) {
       console.warn('[ResQCity SQL DB] MySQL Engine offline. Using Embedded SQL Engine (resqcity_sqlite_db.json). Details:', err.message);
       this.isConnectedToMysql = false;
@@ -669,21 +695,89 @@ class DatabaseService {
   public saveShelter(s: Shelter) {
     this.tables.shelters.set(s.id, s);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`shelters\` (\`id\`, \`name\`, \`ward_id\`, \`total_capacity\`, \`occupied\`, \`contact_phone\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`total_capacity\` = VALUES(\`total_capacity\`), \`occupied\` = VALUES(\`occupied\`), \`contact_phone\` = VALUES(\`contact_phone\`)`,
+        [s.id, s.name, s.wardId, s.totalCapacity, s.currentOccupancy, s.contactPhone || '']
+      ).catch(() => {});
+    }
   }
 
   public saveFieldCrew(fc: FieldCrew) {
     this.tables.field_crews.set(fc.id, fc);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`field_crews\` (\`id\`, \`name\`, \`ward_id\`, \`specialization\`, \`status\`, \`contact_phone\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`name\` = VALUES(\`name\`), \`status\` = VALUES(\`status\`), \`contact_phone\` = VALUES(\`contact_phone\`)`,
+        [fc.id, fc.name, fc.wardId, fc.specialization, fc.status, fc.contactPhone || '']
+      ).catch(() => {});
+    }
   }
 
   public saveReliefRequest(req: ReliefRequest) {
     this.tables.relief_requests.set(req.id, req);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`relief_requests\` (\`id\`, \`case_id\`, \`citizen_name\`, \`citizen_phone\`, \`household_count\`, \`status\`, \`created_at\`)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`)`,
+        [req.id, req.caseId || '', req.citizenName, req.citizenPhone, req.householdCount, req.status, this.toMysqlDatetime(req.createdAt)]
+      ).catch(() => {});
+    }
+  }
+
+  public saveSensor(sensor: SensorTelemetry) {
+    const sensorId = sensor.id || sensor.stationId;
+    this.tables.sensors.set(sensorId, sensor);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`sensors\` (\`id\`, \`type\`, \`ward_id\`, \`location_name\`, \`status\`, \`last_value\`, \`unit\`)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`last_value\` = VALUES(\`last_value\`)`,
+        [sensorId, sensor.type, sensor.wardId, sensor.locationName, sensor.status, sensor.lastReading?.value || 0, sensor.unit]
+      ).catch(() => {});
+    }
   }
 
   public saveAiLog(log: AiTuningLog) {
     this.tables.ai_tuning_logs.set(log.id, log);
     this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT INTO \`ai_tuning_logs\` (\`id\`, \`case_id\`, \`officer_id\`, \`officer_action\`, \`confidence_score\`, \`created_at\`)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`officer_action\` = VALUES(\`officer_action\`)`,
+        [log.id, log.caseId, log.officerAction || 'AGREED', log.officerAction, log.originalAiConfidence || 0.85, this.toMysqlDatetime(log.timestamp)]
+      ).catch(() => {});
+    }
+  }
+
+  public saveBannedUser(userId: string) {
+    this.tables.banned_users.add(userId);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `INSERT IGNORE INTO \`banned_users\` (\`user_id\`, \`banned_at\`) VALUES (?, ?)`,
+        [userId, this.toMysqlDatetime()]
+      ).catch(() => {});
+    }
+  }
+
+  public removeBannedUser(userId: string) {
+    this.tables.banned_users.delete(userId);
+    this.saveEmbeddedSqlStore();
+    if (this.isConnectedToMysql && this.pool) {
+      this.pool.query(
+        `DELETE FROM \`banned_users\` WHERE \`user_id\` = ?`,
+        [userId]
+      ).catch(() => {});
+    }
   }
 
   public getDbStatus() {

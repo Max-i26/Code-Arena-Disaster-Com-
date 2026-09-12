@@ -123,7 +123,9 @@ class StateStore {
       this.shelters.forEach(s => dbService.saveShelter(s));
       this.fieldCrews.forEach(fc => dbService.saveFieldCrew(fc));
       this.reliefRequests.forEach(r => dbService.saveReliefRequest(r));
+      this.sensors.forEach(s => dbService.saveSensor(s));
       this.aiTuningLogs.forEach(l => dbService.saveAiLog(l));
+      this.bannedUsers.forEach(u => dbService.saveBannedUser(u));
     } catch (err: any) {
       console.error('[ResQCity Store] Error saving persistent state:', err.message);
     }
@@ -449,11 +451,13 @@ class StateStore {
   // Banned Users
   public banUser(userId: string) {
     this.bannedUsers.add(userId);
+    dbService.saveBannedUser(userId);
     this.emit('USER_BANNED', { userId });
   }
 
   public unbanUser(userId: string) {
     this.bannedUsers.delete(userId);
+    dbService.removeBannedUser(userId);
     this.emit('USER_UNBANNED', { userId });
   }
 
