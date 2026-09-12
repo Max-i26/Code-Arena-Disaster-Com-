@@ -11,7 +11,7 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
   const isDataUri = imgUrl.startsWith('data:image/');
   const urlLower = isDataUri ? '' : imgUrl.toLowerCase();
 
-  // Check for obvious non-hazard meme / irrelevant images (only on non-data URIs or explicit joke text)
+  // 1. Pre-filter check for obvious non-hazard meme / joke keywords in filename, URL or description
   const isInvalidOrMeme = 
     urlLower.includes('meme') || 
     urlLower.includes('cat.jpg') || 
@@ -24,7 +24,7 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
     desc.includes('fake report') || 
     desc.includes('test meme') ||
     desc.includes('non-hazard');
-  
+
   if (isInvalidOrMeme) {
     return {
       checkName: 'IMAGE_AI',
@@ -42,27 +42,73 @@ export async function runImageCheck(report: CitizenReport, context: CaseBuildCon
     };
   }
 
-  // Attempt NVIDIA NIM AI evaluation if configured
+  // 2. Multimodal NVIDIA NIM Vision AI evaluation for local file uploads & web URLs
   let aiSummary: string | null = null;
+  let aiIsAuthentic = true;
+  let aiDetectedHazard = hazardType;
+  let aiConfidence = 0.90;
+
   if (nvidiaAi.isConfigured()) {
-    const aiPrompt = `You are a disaster response vision analyst. Analyze this hazard report photo and description:
-Hazard Type: ${hazardType}
-Image URL: ${isDataUri ? '[Base64 Uploaded Photo Data]' : report.imageUrl}
-Description: ${report.description}
+    const visionPrompt = `You are a disaster response vision analyst. Analyze this hazard report photo:
+Reported Hazard Type: ${hazardType}
+Description: ${report.description || 'None'}
 Location: ${context.location.roadName}, ${context.location.wardName}
 
-Evaluate: 1) Is this an authentic hazard? 2) Severity level? 3) Water depth or road blockage?
-Provide a concise 1-sentence analytical summary.`;
+Evaluate whether the photo shows an authentic urban hazard (flood, fallen tree, landslide, blocked drain, downed powerline) vs an irrelevant non-hazard photo (domestic pet/cat/dog, selfie, indoor room, meme, food, document).
 
-    aiSummary = await nvidiaAi.generateCompletion({
-      systemPrompt: 'You are an urban disaster vision analytics system. Respond concisely.',
-      userPrompt: aiPrompt,
-      maxTokens: 80,
+Respond strictly in JSON format:
+{"isAuthenticHazard": true, "detectedHazard": "${hazardType}", "confidence": 0.90, "summary": "1 sentence analytical summary"}`;
+
+    const rawResponse = await nvidiaAi.generateCompletion({
+      systemPrompt: 'You are an urban disaster vision analytics system. Always respond with valid JSON.',
+      userPrompt: visionPrompt,
+      imageUrl: imgUrl,
+      maxTokens: 150,
     });
+
+    if (rawResponse) {
+      try {
+        const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (parsed.isAuthenticHazard === false || parsed.detectedHazard === 'NONE' || (parsed.confidence && parsed.confidence < 0.40)) {
+            aiIsAuthentic = false;
+          }
+          if (parsed.summary) {
+            aiSummary = parsed.summary;
+          }
+          if (parsed.confidence) {
+            aiConfidence = Number(parsed.confidence);
+          }
+        } else {
+          aiSummary = rawResponse.trim();
+        }
+      } catch (e) {
+        aiSummary = rawResponse.trim();
+      }
+    }
   }
 
-  // Determine visual severity and confidence based on hazard signatures
-  let score = 0.92;
+  // If AI Vision explicitly determines the uploaded image is non-hazard / irrelevant
+  if (!aiIsAuthentic) {
+    return {
+      checkName: 'IMAGE_AI',
+      engine: 'AI',
+      passed: false,
+      score: 0.08,
+      summary: aiSummary || 'Photo rejected by NVIDIA NIM Vision AI: Uploaded image content identified as non-disaster / irrelevant.',
+      details: {
+        detectedHazard: 'NONE',
+        visualConfidence: 0.08,
+        visualArtifactsDetected: ['non_infrastructure', 'irrelevant_subject'],
+        isAuthenticDisasterPhoto: false,
+        aiEngineUsed: 'NVIDIA NIM Multimodal Vision AI',
+      },
+    };
+  }
+
+  // 3. Determine visual severity and confidence based on hazard signatures
+  let score = Math.max(0.70, aiConfidence);
   let severityAssessment = 'HIGH';
   let summary = aiSummary || `Visual analysis confirmed authentic ${hazardType.replace(/_/g, ' ').toLowerCase()} with clear carriage-way obstruction.`;
 
@@ -118,7 +164,7 @@ Provide a concise 1-sentence analytical summary.`;
       visualConfidence: score,
       detectedObjects: [hazardType.toLowerCase(), 'road_asphalt', 'infrastructure_hazard'],
       isAuthenticDisasterPhoto: true,
-      aiEngineUsed: nvidiaAi.isConfigured() ? 'NVIDIA NIM' : 'Disaster Heuristic Vision AI',
+      aiEngineUsed: nvidiaAi.isConfigured() ? 'NVIDIA NIM Multimodal Vision AI' : 'Disaster Heuristic Vision AI',
     },
   };
 }
