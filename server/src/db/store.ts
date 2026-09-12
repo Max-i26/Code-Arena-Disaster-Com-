@@ -243,6 +243,7 @@ class StateStore {
   // Reports
   public addReport(report: CitizenReport): CitizenReport {
     this.reports.unshift(report);
+    this.savePersistentState();
     this.emit('REPORT_CREATED', report);
     return report;
   }
@@ -254,6 +255,7 @@ class StateStore {
   // Cases
   public addCase(hazardCase: HazardCase): HazardCase {
     this.cases.unshift(hazardCase);
+    this.savePersistentState();
     this.emit('CASE_CREATED', hazardCase);
     return hazardCase;
   }
@@ -270,6 +272,7 @@ class StateStore {
     const idx = this.cases.findIndex(c => c.id === id);
     if (idx >= 0) {
       this.cases[idx] = { ...this.cases[idx], ...updates };
+      this.savePersistentState();
       this.emit('CASE_UPDATED', this.cases[idx]);
       return this.cases[idx];
     }
@@ -280,6 +283,7 @@ class StateStore {
     const idx = this.cases.findIndex(c => c.id === id);
     if (idx >= 0) {
       const deleted = this.cases.splice(idx, 1)[0];
+      this.savePersistentState();
       this.emit('CASE_DELETED', deleted);
       return true;
     }
@@ -307,6 +311,7 @@ class StateStore {
         ...updates,
         supplies: updatedSupplies,
       };
+      this.savePersistentState();
       this.emit('SHELTER_UPDATED', this.shelters[idx]);
       return this.shelters[idx];
     }
@@ -317,6 +322,7 @@ class StateStore {
     const id = newShelter.id || `shelter-${Date.now()}`;
     const shelter: Shelter = { ...newShelter, id };
     this.shelters.push(shelter);
+    this.savePersistentState();
     this.emit('SHELTER_ADDED', shelter);
     return shelter;
   }
@@ -325,6 +331,7 @@ class StateStore {
     const idx = this.shelters.findIndex(s => s.id === id);
     if (idx >= 0) {
       const deleted = this.shelters.splice(idx, 1)[0];
+      this.savePersistentState();
       this.emit('SHELTER_DELETED', deleted);
       return true;
     }
@@ -344,6 +351,7 @@ class StateStore {
     const id = newCrew.id || `crew-${Date.now()}`;
     const crew: FieldCrew = { ...newCrew, id };
     this.fieldCrews.push(crew);
+    this.savePersistentState();
     this.emit('FIELD_CREW_ADDED', crew);
     return crew;
   }
@@ -352,6 +360,7 @@ class StateStore {
     const idx = this.fieldCrews.findIndex(c => c.id === id);
     if (idx >= 0) {
       this.fieldCrews[idx] = { ...this.fieldCrews[idx], ...updates };
+      this.savePersistentState();
       this.emit('FIELD_CREW_UPDATED', this.fieldCrews[idx]);
       return this.fieldCrews[idx];
     }
@@ -362,6 +371,7 @@ class StateStore {
     const idx = this.fieldCrews.findIndex(c => c.id === id);
     if (idx >= 0) {
       const deleted = this.fieldCrews.splice(idx, 1)[0];
+      this.savePersistentState();
       this.emit('FIELD_CREW_DELETED', deleted);
       return true;
     }
@@ -379,6 +389,7 @@ class StateStore {
 
   public addTicket(ticket: CouncilTicket): CouncilTicket {
     this.tickets.unshift(ticket);
+    this.savePersistentState();
     this.emit('TICKET_CREATED', ticket);
     return ticket;
   }
@@ -387,6 +398,7 @@ class StateStore {
     const idx = this.tickets.findIndex(t => t.id === id);
     if (idx >= 0) {
       this.tickets[idx] = { ...this.tickets[idx], ...updates };
+      this.savePersistentState();
       this.emit('TICKET_UPDATED', this.tickets[idx]);
       return this.tickets[idx];
     }
@@ -397,6 +409,7 @@ class StateStore {
     const idx = this.tickets.findIndex(t => t.caseId === caseId);
     if (idx >= 0) {
       const deleted = this.tickets.splice(idx, 1)[0];
+      this.savePersistentState();
       this.emit('TICKET_DELETED', deleted);
       return true;
     }

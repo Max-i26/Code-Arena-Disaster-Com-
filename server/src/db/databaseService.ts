@@ -183,6 +183,17 @@ class DatabaseService {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
 
+      // Column migrations for users
+      const userColumns = [
+        'verification_status VARCHAR(32) DEFAULT "APPROVED"',
+        'nic_number VARCHAR(64)',
+        'nic_document_url TEXT',
+        'official_details TEXT',
+      ];
+      for (const colDef of userColumns) {
+        try { await this.pool.query(`ALTER TABLE \`users\` ADD COLUMN ${colDef}`); } catch (e) { }
+      }
+
       // 2. Table: cases
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS \`cases\` (
@@ -198,9 +209,20 @@ class DatabaseService {
           \`description\` TEXT,
           \`road_closed\` BOOLEAN DEFAULT FALSE,
           \`urgency\` VARCHAR(32),
-          \`confidence_score\` FLOAT
+          \`confidence_score\` FLOAT,
+          \`reporter_name\` VARCHAR(128),
+          \`reporter_phone\` VARCHAR(64)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+
+      // Column migrations for cases
+      const caseColumns = [
+        'reporter_name VARCHAR(128)',
+        'reporter_phone VARCHAR(64)',
+      ];
+      for (const colDef of caseColumns) {
+        try { await this.pool.query(`ALTER TABLE \`cases\` ADD COLUMN ${colDef}`); } catch (e) { }
+      }
 
       // 3. Table: tickets
       await this.pool.query(`
@@ -555,9 +577,9 @@ class DatabaseService {
     this.saveEmbeddedSqlStore();
     if (this.isConnectedToMysql && this.pool) {
       this.pool.query(
-        `INSERT INTO \`cases\` (\`id\`, \`report_id\`, \`source\`, \`created_at\`, \`hazard_type\`, \`status\`, \`road_name\`, \`ward_id\`, \`image_url\`, \`description\`, \`road_closed\`, \`urgency\`, \`confidence_score\`)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`)`,
+        `INSERT INTO \`cases\` (\`id\`, \`report_id\`, \`source\`, \`created_at\`, \`hazard_type\`, \`status\`, \`road_name\`, \`ward_id\`, \`image_url\`, \`description\`, \`road_closed\`, \`urgency\`, \`confidence_score\`, \`reporter_name\`, \`reporter_phone\`)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`status\` = VALUES(\`status\`), \`road_closed\` = VALUES(\`road_closed\`), \`urgency\` = VALUES(\`urgency\`), \`confidence_score\` = VALUES(\`confidence_score\`), \`reporter_name\` = VALUES(\`reporter_name\`), \`reporter_phone\` = VALUES(\`reporter_phone\`)`,
         [
           c.id,
           c.reportId || '',
@@ -570,8 +592,10 @@ class DatabaseService {
           c.imageUrl || '',
           c.description || '',
           c.roadClosed ? 1 : 0,
-          c.urgency,
+          c.verdictData?.urgency || 'MEDIUM',
           c.verdictData?.confidenceScore || 0.85,
+          c.reporterName || '',
+          c.reporterPhone || '',
         ]
       ).catch(() => {});
     }
