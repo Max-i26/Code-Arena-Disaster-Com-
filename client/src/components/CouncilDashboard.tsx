@@ -16,6 +16,7 @@ import {
   Trash2,
   User,
   Phone,
+  MapPin,
   Image as ImageIcon,
 } from 'lucide-react';
 import { AppState, HazardCase, CouncilTicket } from '../types';
@@ -142,6 +143,18 @@ const CaseCard: React.FC<CaseCardProps> = ({ c, onSelectCase, onRefresh }) => {
                 <span className="ml-auto text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-800/80 px-2.5 py-1 rounded-lg flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
                   AI {(c.verdictData.confidenceScore * 100).toFixed(0)}%
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+              <span className="text-cyan-300 font-bold bg-cyan-950/80 px-2.5 py-0.5 rounded border border-cyan-800">
+                CASE ID: {c.id}
+              </span>
+              {c.ticketId && (
+                <span className="text-amber-300 font-bold bg-amber-950/80 px-2.5 py-0.5 rounded border border-amber-800 flex items-center gap-1">
+                  <Truck className="w-3 h-3 text-amber-400" />
+                  WORK ORDER: {c.ticketId}
                 </span>
               )}
             </div>
@@ -493,10 +506,17 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
               openTickets.map((t) => {
                 const matchingCase = state.cases.find((c) => c.id === t.caseId);
                 return (
-                  <div key={t.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm font-bold text-white">{t.id}</span>
-                      <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold uppercase ${
+                  <div key={t.id} className="bg-slate-950 border border-slate-800 p-5 rounded-2xl space-y-3.5 shadow-md">
+                    {/* Header: Ticket ID & Case ID Link */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-sm font-bold text-amber-400">{t.id}</span>
+                        <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-800">
+                          LINKED CASE: {t.caseId}
+                        </span>
+                      </div>
+
+                      <span className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold uppercase ${
                         t.status === 'DISPATCHED'
                           ? 'bg-amber-950 text-amber-300 border border-amber-700'
                           : 'bg-rose-950 text-rose-300 border border-rose-700'
@@ -505,10 +525,49 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                       </span>
                     </div>
 
-                    <div className="text-sm space-y-1">
-                      <div className="text-slate-300">Hazard: <span className="font-bold text-amber-300 text-base">{t.hazardType.replace(/_/g, ' ')}</span></div>
-                      <div className="text-slate-400 text-xs font-mono">
-                        Ward: <span className="text-white font-semibold">{t.wardId}</span> · Urgency:{' '}
+                    {/* Linked Case Preview (Thumbnail, Road Name, Description, Submitter) */}
+                    {matchingCase && (
+                      <div className="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
+                        <div className="flex items-start gap-3">
+                          {matchingCase.imageUrl && (
+                            <img
+                              src={matchingCase.imageUrl}
+                              alt=""
+                              className="w-12 h-12 rounded-lg object-cover border border-slate-700 shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-slate-300 font-mono flex items-center space-x-1">
+                              <MapPin className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                              <span className="text-cyan-300 font-bold truncate">{matchingCase.location.roadName}</span>
+                            </div>
+                            <p className="text-xs text-slate-200 line-clamp-1 mt-0.5 italic">
+                              "{matchingCase.description || 'Hazard reported on road segment.'}"
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between text-[11px] pt-1.5 border-t border-slate-800/60 text-slate-300 gap-1.5 font-mono">
+                          <div className="flex items-center space-x-1 truncate">
+                            <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                            <span className="truncate">Reporter: <strong className="text-white">{matchingCase.reporterName || 'Citizen Submitter'}</strong></span>
+                          </div>
+                          {(matchingCase.reporterPhone || matchingCase.source === 'CITIZEN') && (
+                            <div className="flex items-center space-x-1 text-cyan-300">
+                              <Phone className="w-3 h-3 text-cyan-400" />
+                              <span>{matchingCase.reporterPhone || 'Verified Phone'}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hazard Type, Ward & Urgency */}
+                    <div className="text-xs font-mono flex flex-wrap items-center justify-between bg-slate-900/40 p-2.5 rounded-xl border border-slate-800/60 gap-2">
+                      <div><span className="text-slate-400">Hazard:</span> <span className="font-bold text-amber-300">{t.hazardType.replace(/_/g, ' ')}</span></div>
+                      <div><span className="text-slate-400">Ward:</span> <span className="text-white font-semibold">{t.wardId}</span></div>
+                      <div>
+                        <span className="text-slate-400">Urgency:</span>{' '}
                         <span className={
                           t.urgency === 'CRITICAL' ? 'text-rose-400 font-bold' :
                           t.urgency === 'HIGH' ? 'text-amber-400 font-bold' : 'text-blue-400 font-bold'
@@ -517,21 +576,6 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                         </span>
                       </div>
                     </div>
-
-                    {matchingCase && (
-                      <div className="flex items-center justify-between text-xs bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-slate-300">
-                        <div className="flex items-center space-x-1.5 truncate">
-                          <User className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                          <span className="truncate">Reported By: <strong className="text-white">{matchingCase.reporterName || (matchingCase.source === 'SENSOR_AUTO' ? 'Automated IoT Sensor Station' : 'Registered Citizen Submitter')}</strong></span>
-                        </div>
-                        {(matchingCase.reporterPhone || matchingCase.source === 'CITIZEN') && (
-                          <div className="flex items-center space-x-1 font-mono text-cyan-300 shrink-0 ml-2">
-                            <Phone className="w-3.5 h-3.5 text-cyan-400" />
-                            <span>{matchingCase.reporterPhone || 'Verified Account Phone'}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                   {t.assignedCrewName ? (
                     <div className="bg-emerald-950/60 border border-emerald-700/60 p-3.5 rounded-xl text-sm space-y-2.5">
