@@ -1,3 +1,4 @@
+export type UserRole = 'LANDING' | 'CITIZEN' | 'COUNCIL_OFFICER' | 'FIELD_CREW' | 'RELIEF_DESK' | 'SYSTEM_ADMIN';
 export type HazardType = 'FLOOD' | 'FALLEN_TREE' | 'LANDSLIDE' | 'BLOCKED_DRAIN' | 'DOWNED_POWERLINE';
 export type SeverityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type CaseStatus = 'PENDING' | 'VERIFIED' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED';

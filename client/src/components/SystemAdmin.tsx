@@ -8,7 +8,8 @@ import {
   AlertTriangle, 
   Save, 
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Download
 } from 'lucide-react';
 import { AppState, SystemConfig } from '../types';
 import { api } from '../services/api';
@@ -25,6 +26,10 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({
   const [config, setConfig] = useState<SystemConfig>({ ...state.config });
   const [banUserIdInput, setBanUserIdInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleExportAudit = () => {
+    window.open('/api/audit/export', '_blank');
+  };
 
   const handleSaveConfig = async () => {
     try {
@@ -74,6 +79,14 @@ export const SystemAdmin: React.FC<SystemAdminProps> = ({
             <p className="text-xs text-slate-400">Tune AI Aggregator strictness, configure telemetry thresholds, and inspect feedback loop logs.</p>
           </div>
         </div>
+
+        <button
+          onClick={handleExportAudit}
+          className="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-medium flex items-center space-x-2 transition shadow-md"
+        >
+          <Download className="w-4 h-4 text-cyan-400" />
+          <span>Export Full Audit Trail (JSON)</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

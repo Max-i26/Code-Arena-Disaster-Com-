@@ -3,6 +3,7 @@ import cors from 'cors';
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { apiRouter } from './routes/api';
+import { authRouter } from './routes/auth';
 import { store } from './db/store';
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // REST API
+app.use('/api/auth', authRouter);
 app.use('/api', apiRouter);
 
 // Health check

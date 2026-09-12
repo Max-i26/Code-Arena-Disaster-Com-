@@ -30,13 +30,28 @@ export class HazardAggregatorService {
     const riskScore = checks.risk.score;
 
     // Weight matrix for multi-signal fusion:
-    // Image (30%), Weather (25%), Cluster (20%), Location (15%), Reporter Trust/Risk (10%)
-    const weightedConfidence =
-      imgScore * 0.30 +
-      weatherScore * 0.25 +
-      clusterScore * 0.20 +
-      locScore * 0.15 +
-      context.userTrustScore * 0.10;
+    // Dynamic weighting based on hazard characteristics
+    const isNonWeatherHazard = ['FALLEN_TREE', 'LANDSLIDE', 'BLOCKED_DRAIN', 'DOWNED_POWERLINE'].includes(report.hazardType);
+
+    let weightedConfidence = 0;
+    if (isNonWeatherHazard) {
+      // For physical localized hazards (e.g. fallen tree, landslide), visual proof and location AI carry primary weight:
+      // Image AI (45%), Location AI (25%), Reporter Trust (15%), Cluster (15%)
+      weightedConfidence =
+        imgScore * 0.45 +
+        locScore * 0.25 +
+        context.userTrustScore * 0.15 +
+        clusterScore * 0.15;
+    } else {
+      // For hydrological hazards (FLOOD):
+      // Image AI (35%), Weather Telemetry (25%), Cluster (15%), Location AI (15%), Reporter Trust (10%)
+      weightedConfidence =
+        imgScore * 0.35 +
+        weatherScore * 0.25 +
+        clusterScore * 0.15 +
+        locScore * 0.15 +
+        context.userTrustScore * 0.10;
+    }
 
     const roundedConfidence = Math.round(weightedConfidence * 100) / 100;
 
@@ -65,10 +80,16 @@ export class HazardAggregatorService {
     }
 
     // Determine Verdict based on confidence & system corroborations
-    if (roundedConfidence >= threshold || (checks.image.passed && checks.weather.passed && checks.cluster.passed)) {
+    const isHighQualityVisualProof = checks.image.passed && imgScore >= 0.85 && locScore >= 0.70;
+    const isCorroboratedByTelemetry = checks.weather.passed && checks.cluster.passed;
+
+    if (roundedConfidence >= threshold || isHighQualityVisualProof || isCorroboratedByTelemetry) {
       verdict = 'CONFIRMED';
-      reasoningChain.push(`Corroborated by high confidence score (${(roundedConfidence * 100).toFixed(0)}%), meeting threshold >= ${(threshold * 100).toFixed(0)}%.`);
+      reasoningChain.push(`Corroborated by high multi-signal confidence score (${(roundedConfidence * 100).toFixed(0)}%), meeting threshold >= ${(threshold * 100).toFixed(0)}%.`);
       
+      if (checks.image.passed) {
+        reasoningChain.push(`Visual AI confirmed authentic hazard signature for ${report.hazardType.replace(/_/g, ' ')} (${(imgScore * 100).toFixed(0)}% visual confidence).`);
+      }
       if (checks.weather.passed) {
         reasoningChain.push(`System weather telemetry actively corroborates storm load in ${context.location.wardName}.`);
       }

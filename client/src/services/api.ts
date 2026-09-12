@@ -2,11 +2,35 @@ import { AppState, CitizenReport, HazardCase, ReliefRequest } from '../types';
 
 const API_BASE = '/api';
 
+async function safeFetchJson(url: string, options?: RequestInit): Promise<any> {
+  try {
+    const res = await fetch(url, options);
+    const contentType = res.headers.get('content-type') || '';
+    
+    if (!contentType.includes('application/json')) {
+      const text = await res.text();
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        throw new Error('Backend server unreachable or starting up. Please ensure backend server is running on http://localhost:3001.');
+      }
+      throw new Error(`Server response error: ${text.slice(0, 100)}`);
+    }
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `HTTP ${res.status}: ${res.statusText}`);
+    }
+    return data;
+  } catch (err: any) {
+    if (err.name === 'SyntaxError' || (err.message && err.message.includes('Unexpected token'))) {
+      throw new Error('Backend API returned invalid HTML response. Ensure the backend server is running on http://localhost:3001.');
+    }
+    throw err;
+  }
+}
+
 export const api = {
   async getState(): Promise<AppState> {
-    const res = await fetch(`${API_BASE}/state`);
-    if (!res.ok) throw new Error('Failed to load state');
-    return res.json();
+    return safeFetchJson(`${API_BASE}/state`);
   },
 
   async submitReport(payload: any): Promise<{
@@ -15,116 +39,132 @@ export const api = {
     verdict: any;
     outcomes: any;
   }> {
-    const res = await fetch(`${API_BASE}/reports`, {
+    return safeFetchJson(`${API_BASE}/reports`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to submit report');
-    }
-    return res.json();
   },
 
   async verifyCase(caseId: string, payload: { userId?: string; confirmed: boolean; note?: string }): Promise<any> {
-    const res = await fetch(`${API_BASE}/cases/${caseId}/verify`, {
+    return safeFetchJson(`${API_BASE}/cases/${caseId}/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return res.json();
   },
 
   async dispatchTicket(ticketId: string, crewId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/tickets/${ticketId}/dispatch`, {
+    return safeFetchJson(`${API_BASE}/tickets/${ticketId}/dispatch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ crewId }),
     });
-    return res.json();
   },
 
   async resolveTicket(ticketId: string, payload: { resolutionPhotoUrl?: string; resolutionNotes?: string }): Promise<any> {
-    const res = await fetch(`${API_BASE}/tickets/${ticketId}/resolve`, {
+    return safeFetchJson(`${API_BASE}/tickets/${ticketId}/resolve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    return res.json();
+  },
+
+  async requestRescue(payload: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/relief/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
   },
 
   async matchReliefShelter(reliefRequestId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/relief/match`, {
+    return safeFetchJson(`${API_BASE}/relief/match`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reliefRequestId }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Failed to match shelter');
-    }
-    return res.json();
   },
 
   async submitCaseFeedback(caseId: string, action: string, notes: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/cases/${caseId}/feedback`, {
+    return safeFetchJson(`${API_BASE}/cases/${caseId}/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, notes }),
     });
-    return res.json();
   },
 
   async updateConfig(configUpdates: any): Promise<any> {
-    const res = await fetch(`${API_BASE}/config`, {
+    return safeFetchJson(`${API_BASE}/config`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(configUpdates),
     });
-    return res.json();
   },
 
   async banUser(userId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/users/ban`, {
+    return safeFetchJson(`${API_BASE}/users/ban`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     });
-    return res.json();
   },
 
   async unbanUser(userId: string): Promise<any> {
-    const res = await fetch(`${API_BASE}/users/unban`, {
+    return safeFetchJson(`${API_BASE}/users/unban`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
     });
-    return res.json();
   },
 
   async setSimulationStep(stepIndex: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/simulation/step`, {
+    return safeFetchJson(`${API_BASE}/simulation/step`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stepIndex }),
     });
-    return res.json();
   },
 
   async toggleSimulationPlay(): Promise<any> {
-    const res = await fetch(`${API_BASE}/simulation/toggle`, {
+    return safeFetchJson(`${API_BASE}/simulation/toggle`, {
       method: 'POST',
     });
-    return res.json();
   },
 
   async calculateSafeRoute(startLat: number, startLng: number, endLat: number, endLng: number): Promise<any> {
-    const res = await fetch(`${API_BASE}/route/safe`, {
+    return safeFetchJson(`${API_BASE}/route/safe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ startLat, startLng, endLat, endLng }),
     });
-    return res.json();
+  },
+
+  // Auth API
+  async register(payload: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async login(payload: any): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getMe(token: string): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/me`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+  },
+
+  async logout(): Promise<any> {
+    return safeFetchJson(`${API_BASE}/auth/logout`, { method: 'POST' });
   },
 };

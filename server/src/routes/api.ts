@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import multer from 'multer';
+import path from 'path';
 import { store } from '../db/store';
 import { caseBuilder } from '../services/caseBuilder';
 import { runImageCheck } from '../services/checks/imageCheck';
@@ -15,6 +17,10 @@ import { calculateSafeRoute } from '../services/routing';
 import { CitizenReport, HazardCase, ReliefRequest } from '../types';
 
 export const apiRouter = Router();
+
+// Configure multer memory/disk storage
+const storage = multer.memoryStorage();
+const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
 
 // 1. Initial State
 apiRouter.get('/state', (req, res) => {
@@ -261,7 +267,50 @@ apiRouter.post('/tickets/:id/resolve', (req, res) => {
   res.json({ ticket: updatedTicket, case: updatedCase || hazardCase });
 });
 
-// 6. Relief Match Request
+// 6. Relief Match Request & Direct Emergency Rescue Submission
+apiRouter.post('/relief/request', (req, res) => {
+  const {
+    citizenName = 'Emergency Citizen',
+    citizenPhone = '+94 77 000 0000',
+    householdCount = 1,
+    specialNeeds = [],
+    roadName = 'Baseline Road',
+    lat,
+    lng,
+  } = req.body;
+
+  const resolvedLocation = caseBuilder.resolveLocation(
+    lat !== undefined ? Number(lat) : 6.9344,
+    lng !== undefined ? Number(lng) : 79.8428,
+    roadName
+  );
+
+  const reliefReq: ReliefRequest = {
+    id: `relief-${Date.now()}`,
+    caseId: `direct-rescue-${Date.now()}`,
+    reportId: `rep-rescue-${Date.now()}`,
+    citizenName,
+    citizenPhone,
+    householdCount: Number(householdCount) || 1,
+    specialNeeds: Array.isArray(specialNeeds) ? specialNeeds : [],
+    location: resolvedLocation,
+    urgency: 'CRITICAL',
+    status: 'QUEUED',
+    createdAt: new Date().toISOString(),
+  };
+
+  store.addReliefRequest(reliefReq);
+  const matchResult = reliefMatching.matchShelter(reliefReq);
+  const updatedReq = store.getReliefRequests().find(r => r.id === reliefReq.id) || reliefReq;
+
+  res.json({
+    success: true,
+    request: updatedReq,
+    match: matchResult,
+    shelters: store.getShelters(),
+  });
+});
+
 apiRouter.post('/relief/match', (req, res) => {
   const { reliefRequestId } = req.body;
   const request = store.getReliefRequests().find(r => r.id === reliefRequestId);
@@ -330,4 +379,42 @@ apiRouter.post('/route/safe', (req, res) => {
   const { startLat, startLng, endLat, endLng } = req.body;
   const result = calculateSafeRoute([Number(startLat), Number(startLng)], [Number(endLat), Number(endLng)]);
   res.json(result);
+});
+
+// 12. Multipart Photo Upload Endpoint
+apiRouter.post('/upload', upload.single('photo'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  // Convert uploaded buffer to base64 data URI for instant rendering
+  const base64Str = req.file.buffer.toString('base64');
+  const mimeType = req.file.mimetype || 'image/jpeg';
+  const dataUri = `data:${mimeType};base64,${base64Str}`;
+
+  res.json({
+    success: true,
+    url: dataUri,
+    filename: req.file.originalname,
+    size: req.file.size,
+  });
+});
+
+// 13. System Audit Log & Evaluation Data Export
+apiRouter.get('/audit/export', (req, res) => {
+  const auditBundle = {
+    exportedAt: new Date().toISOString(),
+    system: 'ResQCity Disaster Response Engine (Topic 04)',
+    config: store.getConfig(),
+    totalCasesProcessed: store.getCases().length,
+    cases: store.getCases(),
+    tickets: store.getTickets(),
+    reliefRequests: store.getReliefRequests(),
+    aiTuningLogs: store.getAiTuningLogs(),
+    bannedUsers: store.getBannedUsers(),
+  };
+
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Disposition', 'attachment; filename=ResQCity_Audit_Logs.json');
+  res.send(JSON.stringify(auditBundle, null, 2));
 });

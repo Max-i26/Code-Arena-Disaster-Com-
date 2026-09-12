@@ -1,10 +1,14 @@
 import { CheckOutput, CitizenReport } from '../../types';
 import { CaseBuildContext } from '../caseBuilder';
 import { store } from '../../db/store';
+import { liveWeatherService } from '../liveWeatherService';
 
-export function runWeatherCheck(report: CitizenReport, context: CaseBuildContext): CheckOutput {
+export async function runWeatherCheck(report: CitizenReport, context: CaseBuildContext): Promise<CheckOutput> {
   const config = store.getConfig();
   const wardSensors = context.wardSensors;
+
+  // Fetch live weather data from Open-Meteo API (with fallback)
+  const liveWeather = await liveWeatherService.fetchLiveWeather(context.location.lat, context.location.lng);
   
   // Find highest rainfall rate and river capacity in the ward
   let maxRainfall = 0;
@@ -15,6 +19,11 @@ export function runWeatherCheck(report: CitizenReport, context: CaseBuildContext
     if (s.rainfallRateMmH > maxRainfall) maxRainfall = s.rainfallRateMmH;
     if (s.rainfallAccumulated3h > maxAccumulated3h) maxAccumulated3h = s.rainfallAccumulated3h;
     if (s.riverCapacityPct > maxRiverPct) maxRiverPct = s.riverCapacityPct;
+  }
+
+  // Factor live API precipitation into calculation if telemetry is at zero baseline
+  if (liveWeather.isRaining && maxRainfall === 0) {
+    maxRainfall = Math.max(maxRainfall, liveWeather.precipitationMm * 4);
   }
 
   // Plain code deterministic rule engine:
@@ -49,6 +58,10 @@ export function runWeatherCheck(report: CitizenReport, context: CaseBuildContext
     summary = `Moderate weather conditions detected: ${maxRainfall.toFixed(1)} mm/h rainfall in ward.`;
   }
 
+  if (liveWeather.source === 'OPEN_METEO_LIVE_API') {
+    summary += ` [Live Open-Meteo Feed: ${liveWeather.temperatureC}°C, Cloud: ${liveWeather.cloudCoverPct}%]`;
+  }
+
   return {
     checkName: 'WEATHER_SYSTEM',
     engine: 'SYSTEM',
@@ -61,6 +74,7 @@ export function runWeatherCheck(report: CitizenReport, context: CaseBuildContext
       accumulated3hMm: maxAccumulated3h,
       ruleMatched,
       stationCountEvaluated: wardSensors.length,
+      liveWeatherApi: liveWeather,
     },
   };
 }

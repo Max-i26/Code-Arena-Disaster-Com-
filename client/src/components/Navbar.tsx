@@ -8,10 +8,15 @@ import {
   Settings2, 
   Radio, 
   BookOpen,
-  Sparkles
+  Sparkles,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  UserCheck,
+  Lock
 } from 'lucide-react';
 
-export type UserRole = 'CITIZEN' | 'COUNCIL_OFFICER' | 'FIELD_CREW' | 'RELIEF_DESK' | 'SYSTEM_ADMIN';
+export type UserRole = 'LANDING' | 'CITIZEN' | 'COUNCIL_OFFICER' | 'FIELD_CREW' | 'RELIEF_DESK' | 'SYSTEM_ADMIN';
 
 interface NavbarProps {
   currentRole: UserRole;
@@ -20,6 +25,9 @@ interface NavbarProps {
   openTicketCount: number;
   unassignedReliefCount: number;
   onOpenTestingGuide: () => void;
+  currentUser: any | null;
+  onOpenAuthModal: (role?: UserRole) => void;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -29,8 +37,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   openTicketCount,
   unassignedReliefCount,
   onOpenTestingGuide,
+  currentUser,
+  onOpenAuthModal,
+  onLogout,
 }) => {
   const roles: { id: UserRole; label: string; icon: any; badge?: number; color: string }[] = [
+    {
+      id: 'LANDING',
+      label: 'Home Overview',
+      icon: LayoutDashboard,
+      color: 'hover:bg-cyan-600/20 text-cyan-400',
+    },
     {
       id: 'CITIZEN',
       label: 'Citizen Portal',
@@ -71,7 +88,10 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-2">
           {/* Brand Logo & Title */}
-          <div className="flex items-center space-x-3 shrink-0">
+          <button 
+            onClick={() => onRoleChange('LANDING')}
+            className="flex items-center space-x-3 shrink-0 text-left hover:opacity-90 transition"
+          >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 border border-blue-400/30">
               <ShieldAlert className="w-6 h-6 text-white" />
             </div>
@@ -84,17 +104,25 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <p className="text-[10px] text-slate-400 hidden sm:block">Urban Flood & Road Hazard Coordination System</p>
             </div>
-          </div>
+          </button>
 
           {/* Role Navigation Switcher */}
           <nav className="flex items-center space-x-1 bg-slate-950/90 p-1 rounded-xl border border-slate-800">
             {roles.map((r) => {
               const Icon = r.icon;
               const isActive = currentRole === r.id;
+              const isLocked = !currentUser && r.id !== 'LANDING';
+
               return (
                 <button
                   key={r.id}
-                  onClick={() => onRoleChange(r.id)}
+                  onClick={() => {
+                    if (isLocked) {
+                      onOpenAuthModal(r.id);
+                    } else {
+                      onRoleChange(r.id);
+                    }
+                  }}
                   className={`relative flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-slate-800 text-white shadow-md border border-slate-700'
@@ -103,7 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
                   <span className="hidden md:inline">{r.label}</span>
-                  {r.badge !== undefined && r.badge > 0 && (
+                  {isLocked && (
+                    <Lock className="w-3 h-3 text-slate-500" />
+                  )}
+                  {r.badge !== undefined && r.badge > 0 && !isLocked && (
                     <span className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold leading-none text-white bg-rose-600 rounded-full">
                       {r.badge}
                     </span>
@@ -113,21 +144,42 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Actions & Guide Button */}
+          {/* Actions & User Auth */}
           <div className="flex items-center space-x-2 text-xs">
+            {currentUser ? (
+              <div className="flex items-center space-x-2 bg-slate-950 p-1 pl-2.5 rounded-xl border border-slate-800">
+                <div className="flex items-center space-x-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="font-semibold text-white hidden xl:inline truncate max-w-[120px]">{currentUser.fullName}</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                    {currentUser.role}
+                  </span>
+                </div>
+                <button
+                  onClick={onLogout}
+                  title="Log out of session"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-900 transition"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => onOpenAuthModal()}
+                className="flex items-center space-x-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold px-3 py-1.5 rounded-xl shadow-md transition"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Sign In / Register</span>
+              </button>
+            )}
+
             <button
               onClick={onOpenTestingGuide}
-              className="flex items-center space-x-1.5 bg-gradient-to-r from-cyan-950 to-blue-950 hover:from-cyan-900 hover:to-blue-900 text-cyan-300 border border-cyan-700/60 px-3 py-1.5 rounded-xl font-medium transition shadow"
+              className="flex items-center space-x-1.5 bg-slate-950 hover:bg-slate-900 text-slate-300 border border-slate-800 px-3 py-1.5 rounded-xl font-medium transition"
             >
               <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Testing Guide &amp; Postman</span>
+              <span className="hidden sm:inline">Guide</span>
             </button>
-            {activeAlertCount > 0 && (
-              <div className="hidden xl:flex items-center space-x-1 bg-rose-950/60 text-rose-300 px-2.5 py-1 rounded-full border border-rose-800/60 animate-pulse">
-                <Radio className="w-3.5 h-3.5 text-rose-400" />
-                <span className="font-semibold">{activeAlertCount} Alert{activeAlertCount > 1 ? 's' : ''}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
