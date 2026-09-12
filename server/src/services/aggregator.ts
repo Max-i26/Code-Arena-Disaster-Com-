@@ -64,8 +64,8 @@ export class HazardAggregatorService {
     const recommendedActions: string[] = [];
     const triggeredOutcomes: ('NEED_MORE_INFO' | 'PUBLISHED' | 'AREA_ALERT' | 'COUNCIL_TICKET')[] = [];
 
-    // Check for hard rejections (e.g. invalid meme/spam photo)
-    if (!checks.image.passed && imgScore < 0.20) {
+    // Check for hard rejections (e.g. invalid photo proof, person portrait, meme, spam)
+    if (!checks.image.passed) {
       verdict = 'REJECTED';
       reasoningChain.push('Image failed validation: Photo content identified as non-hazard or irrelevant.');
       reasoningChain.push(`Weighted confidence (${(roundedConfidence * 100).toFixed(0)}%) is below acceptable disaster verification standards.`);
@@ -73,7 +73,7 @@ export class HazardAggregatorService {
       return {
         caseId,
         verdict,
-        confidenceScore: roundedConfidence,
+        confidenceScore: Math.min(0.20, roundedConfidence),
         urgency: 'LOW',
         primaryHazard: report.hazardType,
         checks,
