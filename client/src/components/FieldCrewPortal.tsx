@@ -334,9 +334,16 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
   ];
 
   const currentCrew = state.fieldCrews.find((c) => c.id === selectedCrewId) || state.fieldCrews[0];
-  const assignedTicket = state.tickets.find(
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+
+  const crewTickets = state.tickets.filter(
     (t) => t.assignedCrewId === currentCrew?.id && t.status !== "RESOLVED"
   );
+  const assignedTicket =
+    (selectedTicketId ? crewTickets.find((t) => t.id === selectedTicketId) : null) ||
+    crewTickets.find((t) => t.id === currentCrew?.assignedTicketId) ||
+    crewTickets[0] ||
+    null;
   const matchingCase = assignedTicket
     ? state.cases.find((c) => c.id === assignedTicket.caseId)
     : null;
@@ -369,7 +376,7 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
     if (!assignedTicket) return;
     try {
       setIsMarkingOnSite(true);
-      await api.submitCaseFeedback(assignedTicket.caseId, "AGREED", "Field crew arrived on site.");
+      await api.markTicketOnSite(assignedTicket.id);
       onRefresh();
     } catch (err: any) {
       alert(`Failed to update status: ${err.message}`);
@@ -597,7 +604,15 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
         {/* Squad Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           {state.fieldCrews.map(cr => (
-            <div key={cr.id} className={`bg-slate-950 p-4 rounded-2xl border transition space-y-2.5 shadow ${selectedCrewId === cr.id ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'}`}>
+            <div
+              key={cr.id}
+              onClick={() => {
+                if (editingCrewId !== cr.id) setSelectedCrewId(cr.id);
+              }}
+              className={`bg-slate-950 p-4 rounded-2xl border transition space-y-2.5 shadow cursor-pointer hover:border-slate-700 ${
+                selectedCrewId === cr.id ? 'border-emerald-500 ring-2 ring-emerald-500/30' : 'border-slate-800'
+              }`}
+            >
               <div className="flex items-start justify-between gap-1">
                 <div>
                   <h4 className="font-bold text-white text-sm leading-snug">{cr.name}</h4>
@@ -704,13 +719,45 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
         <div className="lg:col-span-7 space-y-4">
           {assignedTicket ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl space-y-5">
+              {/* Multi-Ticket Switcher */}
+              {crewTickets.length > 1 && (
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center gap-2">
+                  <span className="text-xs text-slate-400 font-mono font-bold shrink-0">
+                    Active Squad Work Orders ({crewTickets.length}):
+                  </span>
+                  {crewTickets.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedTicketId(t.id)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold border transition cursor-pointer flex items-center space-x-1.5 ${
+                        assignedTicket?.id === t.id
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-600 shadow ring-1 ring-emerald-500/40'
+                          : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white hover:border-slate-500'
+                      }`}
+                    >
+                      <span>{t.id}</span>
+                      <span className="text-[10px] opacity-80">({t.status})</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {/* Ticket header */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
                   <span className="text-xs text-slate-400 font-mono font-bold uppercase tracking-wider block">Assigned Work Order</span>
                   <h3 className="text-xl font-extrabold text-white flex items-center space-x-3 mt-0.5">
                     <span>{assignedTicket.id}</span>
-                    <span className="px-3 py-1 rounded-lg text-xs font-mono font-bold bg-amber-950 text-amber-300 border border-amber-800">
+                    <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold border ${
+                      assignedTicket.status === "ON_SITE"
+                        ? "bg-blue-950 text-blue-300 border-blue-800"
+                        : assignedTicket.status === "DISPATCHED"
+                        ? "bg-amber-950 text-amber-300 border-amber-800"
+                        : assignedTicket.status === "RESOLVED"
+                        ? "bg-emerald-950 text-emerald-300 border-emerald-800"
+                        : "bg-slate-900 text-slate-300 border-slate-700"
+                    }`}>
                       {assignedTicket.status}
                     </span>
                   </h3>
@@ -733,13 +780,29 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
                 <button
                   onClick={handleMarkOnSite}
                   disabled={isMarkingOnSite}
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2.5 text-sm transition"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-700/20 flex items-center justify-center space-x-2.5 text-sm transition cursor-pointer"
                 >
                   <Navigation className="w-5 h-5 text-white" />
                   <span>
                     {isMarkingOnSite ? "Updating Status..." : "Mark On-Site — Crew Has Arrived"}
                   </span>
                 </button>
+              )}
+
+              {/* On-Site Active Indicator */}
+              {assignedTicket.status === "ON_SITE" && (
+                <div className="w-full bg-blue-950/60 border border-blue-700/60 text-blue-200 py-3.5 px-4 rounded-xl flex items-center justify-between space-x-3 text-sm shadow-lg shadow-blue-950/30">
+                  <div className="flex items-center space-x-2.5 font-bold">
+                    <span className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                    <span>Crew Is Currently On-Site</span>
+                  </div>
+                  <span className="text-xs text-blue-300 font-mono bg-blue-900/60 px-2.5 py-1 rounded-lg border border-blue-700/50">
+                    Mitigation in progress
+                  </span>
+                </div>
               )}
 
               {/* Hazard Info */}

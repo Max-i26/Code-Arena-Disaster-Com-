@@ -120,11 +120,17 @@ class DatabaseService {
         }
       };
 
-      // 2. Load persistent_store.json file if available
+      // 2. Load persistent_store.json file if available and not empty
       if (fs.existsSync(PERSISTENT_STORE_FILE)) {
         const raw = fs.readFileSync(PERSISTENT_STORE_FILE, 'utf-8');
-        populateData(JSON.parse(raw));
-        console.log(`[ResQCity SQL DB] Loaded database tables from persistent_store.json.`);
+        if (raw && raw.trim().length > 2) {
+          populateData(JSON.parse(raw));
+          console.log(`[ResQCity SQL DB] Loaded database tables from persistent_store.json.`);
+        } else if (fs.existsSync(EMBEDDED_SQL_FILE)) {
+          const embRaw = fs.readFileSync(EMBEDDED_SQL_FILE, 'utf-8');
+          populateData(JSON.parse(embRaw));
+          console.log(`[ResQCity SQL DB] Loaded embedded database tables from resqcity_sqlite_db.json.`);
+        }
       } else if (fs.existsSync(EMBEDDED_SQL_FILE)) {
         const raw = fs.readFileSync(EMBEDDED_SQL_FILE, 'utf-8');
         populateData(JSON.parse(raw));
@@ -301,26 +307,33 @@ class DatabaseService {
     }
   }
 
+  private saveDbTimeout: NodeJS.Timeout | null = null;
+
   private saveEmbeddedSqlStore() {
-    try {
-      const payload = {
-        users: Array.from(this.tables.users.values()),
-        cases: Array.from(this.tables.cases.values()),
-        reports: Array.from(this.tables.reports.values()),
-        tickets: Array.from(this.tables.tickets.values()),
-        shelters: Array.from(this.tables.shelters.values()),
-        field_crews: Array.from(this.tables.field_crews.values()),
-        relief_requests: Array.from(this.tables.relief_requests.values()),
-        sensors: Array.from(this.tables.sensors.values()),
-        ai_tuning_logs: Array.from(this.tables.ai_tuning_logs.values()),
-        banned_users: Array.from(this.tables.banned_users),
-      };
-      fs.writeFileSync(PERSISTENT_STORE_FILE, JSON.stringify(payload, null, 2), 'utf-8');
-      fs.writeFileSync(EMBEDDED_SQL_FILE, JSON.stringify(payload, null, 2), 'utf-8');
-      fs.writeFileSync(PERSISTENT_USERS_FILE, JSON.stringify(payload.users, null, 2), 'utf-8');
-    } catch (err: any) {
-      console.error('[ResQCity SQL DB] Error saving database tables:', err.message);
-    }
+    if (this.saveDbTimeout) return;
+    this.saveDbTimeout = setTimeout(() => {
+      this.saveDbTimeout = null;
+      try {
+        const payload = {
+          users: Array.from(this.tables.users.values()),
+          cases: Array.from(this.tables.cases.values()),
+          reports: Array.from(this.tables.reports.values()),
+          tickets: Array.from(this.tables.tickets.values()),
+          shelters: Array.from(this.tables.shelters.values()),
+          field_crews: Array.from(this.tables.field_crews.values()),
+          relief_requests: Array.from(this.tables.relief_requests.values()),
+          sensors: Array.from(this.tables.sensors.values()),
+          ai_tuning_logs: Array.from(this.tables.ai_tuning_logs.values()),
+          banned_users: Array.from(this.tables.banned_users),
+        };
+        const jsonStr = JSON.stringify(payload, null, 2);
+        fs.writeFile(PERSISTENT_STORE_FILE, jsonStr, 'utf-8', () => {});
+        fs.writeFile(EMBEDDED_SQL_FILE, jsonStr, 'utf-8', () => {});
+        fs.writeFile(PERSISTENT_USERS_FILE, JSON.stringify(payload.users, null, 2), 'utf-8', () => {});
+      } catch (err: any) {
+        console.error('[ResQCity SQL DB] Error saving database tables:', err.message);
+      }
+    }, 150);
   }
 
   private toMysqlDatetime(isoOrDate?: string | Date): string {
@@ -340,6 +353,7 @@ class DatabaseService {
         port: Number(process.env.MYSQL_PORT) || 3306,
         user: process.env.MYSQL_USER || 'root',
         password: process.env.MYSQL_PASSWORD || '',
+        connectTimeout: 800,
       });
 
       await tempConnection.query('CREATE DATABASE IF NOT EXISTS `resqcity_db`');
@@ -354,6 +368,7 @@ class DatabaseService {
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
+        connectTimeout: 800,
       });
 
       // 1. Table: users

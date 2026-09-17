@@ -332,7 +332,7 @@ apiRouter.post('/tickets/:id/dispatch', (req, res) => {
     return res.status(400).json({ error: 'No available field crew squad for dispatch' });
   }
 
-  store.updateFieldCrew(crew.id, {
+  const updatedCrew = store.updateFieldCrew(crew.id, {
     status: 'DISPATCHED',
     assignedTicketId: ticket.id,
   });
@@ -343,7 +343,89 @@ apiRouter.post('/tickets/:id/dispatch', (req, res) => {
     assignedCrewName: crew.name,
   });
 
-  res.json({ ticket: updatedTicket, crew });
+  res.json({ ticket: updatedTicket, crew: updatedCrew });
+});
+
+// 4b. Field Crew Mark On-Site (Crew Has Arrived)
+apiRouter.post('/tickets/:id/on-site', (req, res) => {
+  const { id } = req.params;
+
+  const ticket = store.getTicketById(id);
+  if (!ticket) {
+    return res.status(404).json({ error: 'Ticket not found' });
+  }
+
+  const updatedTicket = store.updateTicket(ticket.id, {
+    status: 'ON_SITE',
+  });
+
+  let updatedCrew = undefined;
+  if (ticket.assignedCrewId) {
+    updatedCrew = store.updateFieldCrew(ticket.assignedCrewId, {
+      status: 'ON_SITE',
+    });
+  }
+
+  let updatedCase = undefined;
+  if (ticket.caseId) {
+    const hazardCase = store.getCaseById(ticket.caseId);
+    if (hazardCase && hazardCase.status !== 'RESOLVED' && hazardCase.status !== 'REJECTED') {
+      updatedCase = store.updateCase(hazardCase.id, {
+        status: 'IN_PROGRESS',
+      });
+    }
+  }
+
+  aiFeedback.logHumanDecision(ticket.caseId, 'AGREED', 'Field crew marked arrived on site.');
+
+  res.json({ ticket: updatedTicket, crew: updatedCrew, case: updatedCase });
+});
+
+// 4c. Update Ticket Status Generic Route
+apiRouter.post('/tickets/:id/status', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const ticket = store.getTicketById(id);
+  if (!ticket) {
+    return res.status(404).json({ error: 'Ticket not found' });
+  }
+
+  if (status === 'ON_SITE') {
+    const updatedTicket = store.updateTicket(ticket.id, { status: 'ON_SITE' });
+    let updatedCrew = undefined;
+    if (ticket.assignedCrewId) {
+      updatedCrew = store.updateFieldCrew(ticket.assignedCrewId, { status: 'ON_SITE' });
+    }
+    let updatedCase = undefined;
+    if (ticket.caseId) {
+      const hazardCase = store.getCaseById(ticket.caseId);
+      if (hazardCase && hazardCase.status !== 'RESOLVED' && hazardCase.status !== 'REJECTED') {
+        updatedCase = store.updateCase(hazardCase.id, { status: 'IN_PROGRESS' });
+      }
+    }
+    aiFeedback.logHumanDecision(ticket.caseId, 'AGREED', 'Field crew marked arrived on site.');
+    return res.json({ ticket: updatedTicket, crew: updatedCrew, case: updatedCase });
+  }
+
+  if (status === 'DISPATCHED') {
+    const updatedTicket = store.updateTicket(ticket.id, { status: 'DISPATCHED' });
+    if (ticket.assignedCrewId) {
+      store.updateFieldCrew(ticket.assignedCrewId, { status: 'DISPATCHED' });
+    }
+    return res.json({ ticket: updatedTicket });
+  }
+
+  if (status === 'RESOLVED') {
+    const updatedTicket = store.updateTicket(ticket.id, { status: 'RESOLVED', resolvedAt: new Date().toISOString() });
+    if (ticket.assignedCrewId) {
+      store.updateFieldCrew(ticket.assignedCrewId, { status: 'AVAILABLE', assignedTicketId: undefined });
+    }
+    return res.json({ ticket: updatedTicket });
+  }
+
+  const updatedTicket = store.updateTicket(ticket.id, { status });
+  return res.json({ ticket: updatedTicket });
 });
 
 // 5. Field Crew Resolve Ticket with Photo (Stage 06 Crew Resolution)
@@ -485,6 +567,22 @@ apiRouter.post('/relief/match', (req, res) => {
     return res.status(404).json({ error: 'Relief request not found' });
   }
 
+  if ((request.status as string) === 'MATCHED' && (request as any).assignedShelterId) {
+    const existingShelter = store.getShelters().find(s => s.id === (request as any).assignedShelterId);
+    if (existingShelter) {
+      return res.json({
+        result: {
+          matchedShelter: existingShelter,
+          availableCapacityAfter: existingShelter.totalCapacity - existingShelter.currentOccupancy,
+          distanceKm: 1.2,
+          safeRoute: [],
+          routeSummary: `Direct safe transit to ${existingShelter.name}`,
+        },
+        request,
+      });
+    }
+  }
+
   const result = reliefMatching.matchShelter(request);
   if (!result) {
     return res.status(400).json({ error: 'No open shelters with sufficient capacity available' });
@@ -563,8 +661,11 @@ apiRouter.post('/users/unban', (req, res) => {
 
 // 10. Simulator Controls
 apiRouter.post('/simulation/step', (req, res) => {
-  const { stepIndex } = req.body;
-  stormSimulator.setStep(Number(stepIndex));
+  const stepIdx = req.body.stepIndex !== undefined ? req.body.stepIndex : req.body.step;
+  const num = Number(stepIdx);
+  if (!isNaN(num)) {
+    stormSimulator.setStep(num);
+  }
   res.json(stormSimulator.getCurrentState());
 });
 

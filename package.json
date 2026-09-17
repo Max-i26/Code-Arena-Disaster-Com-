@@ -4,7 +4,7 @@
   "description": "ResQCity - AI-Powered Urban Disaster & Road Hazard Response System (Topic 04)",
   "main": "server/src/index.ts",
   "scripts": {
-    "dev:server": "tsx server/src/index.ts",
+    "dev:server": "tsx watch server/src/index.ts",
     "dev:client": "npm --prefix client run dev",
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,green\" \"npm run dev:server\" \"npm run dev:client\"",
     "build": "npm --prefix client run build",

@@ -15,6 +15,7 @@ export class NvidiaAiService {
   private endpoint = 'https://integrate.api.nvidia.com/v1/chat/completions';
   private primaryModel = 'deepseek-ai/deepseek-v4-flash-0731';
   private visionModel = 'meta/llama-3.2-11b-vision-instruct';
+  private circuitOpenUntil = 0;
 
   constructor() {
     this.apiKey = process.env.NVIDIA_API_KEY || '';
@@ -22,6 +23,11 @@ export class NvidiaAiService {
 
   public async generateCompletion(options: NvidiaChatOptions): Promise<string | null> {
     if (!this.apiKey) {
+      return null;
+    }
+
+    // Circuit breaker: if recent calls timed out or failed, skip immediately (0ms delay)
+    if (Date.now() < this.circuitOpenUntil) {
       return null;
     }
 
@@ -45,8 +51,9 @@ export class NvidiaAiService {
 
       const modelToUse = options.model || (options.imageUrl ? this.visionModel : this.primaryModel);
 
+      // Ultra-fast timeout: 500ms maximum to keep all submissions instant
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 500);
 
       const res = await fetch(this.endpoint, {
         method: 'POST',
@@ -66,23 +73,22 @@ export class NvidiaAiService {
       clearTimeout(timeoutId);
 
       if (!res.ok) {
-        // Try fallback to primary model if vision endpoint model varies
-        if (options.imageUrl && modelToUse !== this.primaryModel) {
-          return this.generateCompletion({ ...options, model: this.primaryModel });
-        }
+        // Open circuit breaker for 60 seconds on HTTP error
+        this.circuitOpenUntil = Date.now() + 60000;
         return null;
       }
 
       const data: any = await res.json();
       return data.choices?.[0]?.message?.content || null;
     } catch (err) {
-      // Fallback cleanly on network or API failure
+      // Open circuit breaker for 60 seconds on network / timeout failure
+      this.circuitOpenUntil = Date.now() + 60000;
       return null;
     }
   }
 
   public isConfigured(): boolean {
-    return Boolean(this.apiKey && this.apiKey.startsWith('nvapi-'));
+    return Boolean(this.apiKey && this.apiKey.startsWith('nvapi-') && Date.now() >= this.circuitOpenUntil);
   }
 }
 

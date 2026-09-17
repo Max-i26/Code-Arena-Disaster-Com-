@@ -127,6 +127,15 @@ async function runEndToEndVerification() {
     const dispatchData = await dispatchRes.json();
     assert(dispatchData.ticket?.status === 'DISPATCHED' && dispatchData.crew?.status === 'DISPATCHED', 'STAGE_06_COUNCIL', 'Council Officer Dispatch', `Dispatched squad: ${dispatchData.crew?.name}`);
 
+    // 5b. Field Crew Arrival On-Site
+    console.log('\n--- 5b. Testing Field Crew Mark On-Site ---');
+    const onSiteRes = await fetch(`${BASE_URL}/api/tickets/${ticketId}/on-site`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const onSiteData = await onSiteRes.json();
+    assert(onSiteData.ticket?.status === 'ON_SITE' && onSiteData.crew?.status === 'ON_SITE', 'STAGE_06_FIELD_CREW_ARRIVE', 'Field Crew Arrival On-Site', `Ticket and crew status updated to ON_SITE`);
+
     // 6. STAGE 06 (ROLE 2): FIELD CREW SAFE NAVIGATION & RESOLUTION WITH PHOTO
     console.log('\n--- 6. Testing Field Crew Safe Detour & Photographic Closure ---');
     const resolveRes = await fetch(`${BASE_URL}/api/tickets/${ticketId}/resolve`, {

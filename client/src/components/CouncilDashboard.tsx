@@ -349,7 +349,7 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
     })
   );
 
-  const openTickets = state.tickets.filter((t) => t.status === 'OPEN' || t.status === 'DISPATCHED');
+  const openTickets = state.tickets.filter((t) => t.status !== 'RESOLVED');
   const availableCrews = state.fieldCrews.filter((c) => c.status === 'AVAILABLE');
   const resolvedCount = state.cases.filter((c) => c.status === 'RESOLVED').length;
 
@@ -520,7 +520,9 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                       </div>
 
                       <span className={`px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold uppercase ${
-                        t.status === 'DISPATCHED'
+                        t.status === 'ON_SITE'
+                          ? 'bg-blue-950 text-blue-300 border border-blue-700'
+                          : t.status === 'DISPATCHED'
                           ? 'bg-amber-950 text-amber-300 border border-amber-700'
                           : 'bg-rose-950 text-rose-300 border border-rose-700'
                       }`}>
@@ -591,7 +593,7 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
                           <p className="text-xs text-slate-300 italic">
                             Detour: {t.detourRoute[0].instruction}
                           </p>
-                          {t.status === 'DISPATCHED' && (
+                          {(t.status === 'DISPATCHED' || t.status === 'ON_SITE') && (
                             <button
                               onClick={() => handleShowDetour(t)}
                               className="w-full bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-600 text-cyan-200 text-xs font-bold py-2 px-3 rounded-xl transition flex items-center justify-center space-x-2 shadow"

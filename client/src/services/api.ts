@@ -62,6 +62,21 @@ export const api = {
     });
   },
 
+  async markTicketOnSite(ticketId: string): Promise<any> {
+    return safeFetchJson(`${API_BASE}/tickets/${ticketId}/on-site`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+
+  async updateTicketStatus(ticketId: string, status: string): Promise<any> {
+    return safeFetchJson(`${API_BASE}/tickets/${ticketId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+  },
+
   async resolveTicket(ticketId: string, payload: { resolutionPhotoUrl?: string; resolutionNotes?: string }): Promise<any> {
     return safeFetchJson(`${API_BASE}/tickets/${ticketId}/resolve`, {
       method: 'POST',

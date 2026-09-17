@@ -34,6 +34,70 @@ export function App() {
   const [activeDetourPath, setActiveDetourPath] = useState<[number, number][] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
+  const DEMO_PERSONAS: Record<string, any> = {
+    COUNCIL_OFFICER: {
+      id: 'usr-officer-01',
+      username: 'officer_kasun',
+      fullName: 'Kasun Wickramasinghe (Council Officer)',
+      email: 'officer.kasun@council.gov.lk',
+      role: 'COUNCIL_OFFICER',
+      phone: '+94 77 111 2222',
+      wardId: 'ward-01',
+      verificationStatus: 'APPROVED',
+    },
+    CITIZEN: {
+      id: 'usr-citizen-01',
+      username: 'citizen_saman',
+      fullName: 'Saman Kumara (Citizen)',
+      email: 'saman.k@gmail.com',
+      role: 'CITIZEN',
+      phone: '+94 77 345 6789',
+      wardId: 'ward-02',
+      verificationStatus: 'APPROVED',
+    },
+    FIELD_CREW: {
+      id: 'usr-crew-01',
+      username: 'crew_unit1',
+      fullName: 'Rapid Pump Squad 01 (Field Crew)',
+      email: 'crew1@resqcity.lk',
+      role: 'FIELD_CREW',
+      phone: '+94 71 888 9999',
+      wardId: 'ward-02',
+      verificationStatus: 'APPROVED',
+    },
+    RELIEF_DESK: {
+      id: 'usr-relief-01',
+      username: 'relief_agent',
+      fullName: 'Nimali Fernando (Relief Officer)',
+      email: 'relief.desk@resqcity.lk',
+      role: 'RELIEF_DESK',
+      phone: '+94 77 555 6677',
+      wardId: 'ward-01',
+      verificationStatus: 'APPROVED',
+    },
+    SYSTEM_ADMIN: {
+      id: 'usr-admin-01',
+      username: 'sys_admin',
+      fullName: 'Dilshan Silva (System Administrator)',
+      email: 'admin@resqcity.lk',
+      role: 'SYSTEM_ADMIN',
+      phone: '+94 77 000 1111',
+      wardId: 'ward-01',
+      verificationStatus: 'APPROVED',
+    },
+  };
+
+  const handleDemoAuth = (targetRole: UserRole) => {
+    const demoUser = DEMO_PERSONAS[targetRole];
+    if (demoUser) {
+      setCurrentUser(demoUser);
+      setAuthToken(`demo-token-${demoUser.username}`);
+      localStorage.setItem('resqcity_user', JSON.stringify(demoUser));
+      localStorage.setItem('resqcity_token', `demo-token-${demoUser.username}`);
+    }
+    setRole(targetRole);
+  };
+
   const handleAuthSuccess = (user: any, token: string) => {
     setCurrentUser(user);
     setAuthToken(token);
@@ -108,7 +172,7 @@ export function App() {
   }
 
   const activeAlertCount = state.cases.filter(c => c.broadcastSent && c.status !== 'RESOLVED').length;
-  const openTicketCount = state.tickets.filter(t => t.status === 'OPEN' || t.status === 'DISPATCHED').length;
+  const openTicketCount = state.tickets.filter(t => t.status !== 'RESOLVED').length;
   const unassignedReliefCount = state.reliefRequests.filter(r => r.status === 'QUEUED').length;
 
   return (
@@ -135,6 +199,7 @@ export function App() {
       <QuickDemoRibbon
         onSelectRole={setRole}
         onRefresh={fetchState}
+        onDemoAuth={handleDemoAuth}
       />
 
       {/* Main Content Area */}

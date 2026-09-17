@@ -144,34 +144,31 @@ class StateStore {
     }
   }
 
-  public savePersistentState() {
-    try {
-      const payload = {
-        cases: this.cases,
-        reports: this.reports,
-        shelters: this.shelters,
-        fieldCrews: this.fieldCrews,
-        tickets: this.tickets,
-        reliefRequests: this.reliefRequests,
-        config: this.config,
-        aiTuningLogs: this.aiTuningLogs,
-        bannedUsers: Array.from(this.bannedUsers),
-      };
-      fs.writeFileSync(PERSISTENT_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8');
+  private saveTimeout: NodeJS.Timeout | null = null;
 
-      // Sync with SQL Database Engine
-      this.cases.forEach(c => dbService.saveCase(c));
-      this.reports.forEach(r => dbService.saveReport(r));
-      this.tickets.forEach(t => dbService.saveTicket(t));
-      this.shelters.forEach(s => dbService.saveShelter(s));
-      this.fieldCrews.forEach(fc => dbService.saveFieldCrew(fc));
-      this.reliefRequests.forEach(r => dbService.saveReliefRequest(r));
-      this.sensors.forEach(s => dbService.saveSensor(s));
-      this.aiTuningLogs.forEach(l => dbService.saveAiLog(l));
-      this.bannedUsers.forEach(u => dbService.saveBannedUser(u));
-    } catch (err: any) {
-      console.error('[ResQCity Store] Error saving persistent state:', err.message);
-    }
+  public savePersistentState() {
+    if (this.saveTimeout) return;
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null;
+      try {
+        const payload = {
+          cases: this.cases,
+          reports: this.reports,
+          shelters: this.shelters,
+          fieldCrews: this.fieldCrews,
+          tickets: this.tickets,
+          reliefRequests: this.reliefRequests,
+          config: this.config,
+          aiTuningLogs: this.aiTuningLogs,
+          bannedUsers: Array.from(this.bannedUsers),
+        };
+        fs.writeFile(PERSISTENT_FILE_PATH, JSON.stringify(payload, null, 2), 'utf-8', (err) => {
+          if (err) console.error('[ResQCity Store] Error saving persistent state:', err.message);
+        });
+      } catch (err: any) {
+        console.error('[ResQCity Store] Error saving persistent state:', err.message);
+      }
+    }, 150);
   }
 
   public resetToInitialSeed() {
@@ -251,7 +248,6 @@ class StateStore {
   }
 
   public emit(type: string, payload: any) {
-    this.savePersistentState();
     this.subscribers.forEach(cb => {
       try {
         cb({ type, payload });
