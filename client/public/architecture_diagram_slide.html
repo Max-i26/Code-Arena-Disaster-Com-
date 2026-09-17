@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ResQCity System Architecture — Slide Diagram</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e293b;
+      font-family: 'Montserrat', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* 16:9 Presentation Canvas */
+    .slide-canvas {
+      width: 1280px;
+      height: 720px;
+      background-color: #487E58; /* User's Forest Green */
+      background-image: radial-gradient(#3E6E4B 2px, transparent 2px);
+      background-size: 26px 26px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+      border-radius: 8px;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Color Constants Matching Uploaded Template */
+    :root {
+      --bg-green: #487E58;
+      --mustard-yellow: #F4B942;
+      --navy-blue: #354578;
+      --cream-light: #F8F6EB;
+      --text-dark: #1F273D;
+      --accent-purple: #8B4DF5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Slide Canvas (1280 x 720 standard 16:9 HD) -->
+  <div class="slide-canvas p-7 flex flex-col justify-between select-none">
+    
+    <!-- Top Geometric Accent Decors from template -->
+    <div class="absolute top-5 right-6 w-36 h-20 border-4 border-[#8B4DF5]/70 rounded-lg pointer-events-none"></div>
+    <div class="absolute -bottom-6 -left-6 w-24 h-24 border-[14px] border-[#354578] rounded-full pointer-events-none"></div>
+    <div class="absolute top-1/2 -right-8 w-20 h-20 border-[12px] border-white/90 rounded-full pointer-events-none"></div>
+
+    <!-- HEADER TITLE BAR -->
+    <div class="relative z-10 flex items-center justify-between pb-1">
+      <div class="flex items-center space-x-3">
+        <div class="bg-[#F4B942] px-4 py-1.5 rounded-lg shadow-md">
+          <span class="text-xs font-extrabold tracking-widest text-[#1F273D] uppercase">TEAM PREDICTRA</span>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white uppercase drop-shadow-sm">
+          ResQCity · System Architecture &amp; Event Grid
+        </h1>
+      </div>
+      <div class="bg-[#354578] text-[#F8F6EB] px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold shadow-md border border-white/20">
+        100% Closed-Loop Autonomous Response
+      </div>
+    </div>
+
+    <!-- MAIN ARCHITECTURE DIAGRAM GRID -->
+    <div class="relative z-10 flex flex-col justify-between flex-1 py-2 space-y-2.5">
+      
+      <!-- LAYER 1: DATA INGESTION SOURCES (TOP ROW) -->
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Source 1: Citizen Reports -->
+        <div class="bg-[#F4B942] text-[#1F273D] p-3.5 rounded-xl shadow-lg border-2 border-[#1F273D]/10 relative">
+          <div class="flex items-center justify-between border-b-2 border-[#1F273D]/15 pb-1 mb-1.5">
+            <span class="text-xs font-black tracking-wider uppercase flex items-center space-x-1.5">
+              <span>📱</span>
+              <span>CITIZEN INBOUND STREAM</span>
+            </span>
+            <span class="text-[10px] font-mono font-extrabold bg-[#1F273D] text-[#F4B942] px-2 py-0.5 rounded">
+              GPS Geotagged
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px] font-bold">
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              📸 Proof Photo
+            </div>
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              📍 Lat / Lng Coords
+            </div>
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              🆘 Rescue Needs (3p)
+            </div>
+          </div>
+        </div>
+
+        <!-- Source 2: IoT Sensors & Environmental Telemetry -->
+        <div class="bg-[#F4B942] text-[#1F273D] p-3.5 rounded-xl shadow-lg border-2 border-[#1F273D]/10 relative">
+          <div class="flex items-center justify-between border-b-2 border-[#1F273D]/15 pb-1 mb-1.5">
+            <span class="text-xs font-black tracking-wider uppercase flex items-center space-x-1.5">
+              <span>🌊</span>
+              <span>IoT HYDRO TELEMETRY</span>
+            </span>
+            <span class="text-[10px] font-mono font-extrabold bg-[#1F273D] text-[#F4B942] px-2 py-0.5 rounded">
+              Live REST / Telemetry
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px] font-bold">
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              🌊 River Gauge (94%)
+            </div>
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              🌧️ Open-Meteo (88mm/h)
+            </div>
+            <div class="bg-[#F8F6EB] p-1.5 rounded-lg border border-[#1F273D]/10 text-center">
+              ⚡ Hydro Sluice Flow
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INGESTION FLOW ARROWS -->
+      <div class="flex justify-around items-center px-28 -my-1">
+        <div class="flex flex-col items-center">
+          <div class="w-1 h-3 bg-[#F4B942]"></div>
+          <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F4B942]"></div>
+        </div>
+        <div class="text-[10px] font-mono font-extrabold uppercase px-3 py-0.5 rounded-full bg-[#354578] text-[#F8F6EB] border border-white/20">
+          Sub-2ms Ingestion Inflow
+        </div>
+        <div class="flex flex-col items-center">
+          <div class="w-1 h-3 bg-[#F4B942]"></div>
+          <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F4B942]"></div>
+        </div>
+      </div>
+
+      <!-- LAYER 2: THE 6-STAGE AI CONSENSUS GATEWAY (LARGE NAVY BLOCK) -->
+      <div class="bg-[#354578] text-[#F8F6EB] p-4 rounded-2xl shadow-2xl border-2 border-white/20 relative">
+        <div class="flex items-center justify-between border-b border-white/20 pb-1.5 mb-2.5">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-3 h-3 rounded-full bg-[#F4B942] animate-pulse"></span>
+            <h2 class="text-sm font-black tracking-wider uppercase text-[#F4B942]">
+              RESQCITY MULTI-SIGNAL AI CONSENSUS GATEWAY
+            </h2>
+          </div>
+          <span class="text-[10px] font-mono font-bold bg-black/40 text-cyan-300 px-2.5 py-0.5 rounded border border-cyan-400/30">
+            Autonomous Gate: Confidence &gt;= 75%
+          </span>
+        </div>
+
+        <!-- The 6 Horizontal Verification Stages -->
+        <div class="grid grid-cols-6 gap-2 text-[#1F273D]">
+          <!-- Stage 1 -->
+          <div class="bg-[#F8F6EB] p-2 rounded-xl border border-white/30 space-y-1">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">1. INGESTION</div>
+            <div class="text-[10px] font-bold leading-tight">Trust Score Check</div>
+            <div class="text-[9px] text-slate-600">Reputation 0.85</div>
+          </div>
+
+          <!-- Stage 2 -->
+          <div class="bg-[#F8F6EB] p-2 rounded-xl border border-white/30 space-y-1">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">2. SPATIAL GIS</div>
+            <div class="text-[10px] font-bold leading-tight">Ward Join &amp; Road</div>
+            <div class="text-[9px] text-slate-600">Arterial A1 Kelani</div>
+          </div>
+
+          <!-- Stage 3 -->
+          <div class="bg-[#F8F6EB] p-2 rounded-xl border border-white/30 space-y-1">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">3. NVIDIA VISION</div>
+            <div class="text-[10px] font-bold leading-tight">Flood vs Meme Filter</div>
+            <div class="text-[9px] text-emerald-700 font-bold">90% Verified</div>
+          </div>
+
+          <!-- Stage 4 -->
+          <div class="bg-[#F8F6EB] p-2 rounded-xl border border-white/30 space-y-1">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">4. WEATHER API</div>
+            <div class="text-[10px] font-bold leading-tight">&gt;30mm/h Telemetry</div>
+            <div class="text-[9px] text-emerald-700 font-bold">88mm/h Rainfall</div>
+          </div>
+
+          <!-- Stage 5 -->
+          <div class="bg-[#F8F6EB] p-2 rounded-xl border border-white/30 space-y-1">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">5. 200m CLUSTER</div>
+            <div class="text-[10px] font-bold leading-tight">Density Verification</div>
+            <div class="text-[9px] text-emerald-700 font-bold">24 Reports / 3h</div>
+          </div>
+
+          <!-- Stage 6 -->
+          <div class="bg-[#F4B942] p-2 rounded-xl border border-[#1F273D]/20 space-y-1 shadow-inner">
+            <div class="text-[9px] font-mono font-black text-[#354578] uppercase">6. CONSENSUS</div>
+            <div class="text-[10px] font-black leading-tight">95% Confidence</div>
+            <div class="text-[9px] text-rose-800 font-black uppercase">CRITICAL ACTION</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GATEWAY TO EVENT BUS CONNECTOR ARROW -->
+      <div class="flex flex-col items-center -my-1">
+        <div class="w-1 h-3 bg-[#F8F6EB]"></div>
+        <div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F8F6EB]"></div>
+      </div>
+
+      <!-- LAYER 3: WEBSOCKET PUB/SUB EVENT BUS (CREAM COLOR BAR) -->
+      <div class="bg-[#F8F6EB] text-[#1F273D] px-4 py-2 rounded-xl shadow-md border-2 border-[#354578]/20 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="px-2 py-0.5 rounded bg-[#354578] text-[#F8F6EB] text-[10px] font-mono font-bold">ws://</span>
+          <span class="text-xs font-black tracking-wider uppercase text-[#354578]">
+            NATIVE WEBSOCKET REAL-TIME PUB/SUB EVENT BUS
+          </span>
+        </div>
+        <div class="flex items-center space-x-3 text-[10px] font-mono font-bold text-slate-600">
+          <span>TICKET_CREATED</span>
+          <span>•</span>
+          <span>CASE_UPDATED</span>
+          <span>•</span>
+          <span>DETOUR_CALCULATED</span>
+          <span>•</span>
+          <span class="bg-[#487E58] text-white px-2 py-0.5 rounded font-extrabold">&lt;10ms Sync</span>
+        </div>
+      </div>
+
+      <!-- EVENT BUS FAN-OUT CONNECTORS -->
+      <div class="grid grid-cols-4 px-12 -my-1">
+        <div class="flex justify-center"><div class="w-1 h-3 bg-[#F4B942]"></div></div>
+        <div class="flex justify-center"><div class="w-1 h-3 bg-[#F4B942]"></div></div>
+        <div class="flex justify-center"><div class="w-1 h-3 bg-[#F4B942]"></div></div>
+        <div class="flex justify-center"><div class="w-1 h-3 bg-[#F4B942]"></div></div>
+      </div>
+
+      <!-- LAYER 4: THE 4 MULTI-AGENCY DASHBOARDS (BOTTOM ROW) -->
+      <div class="grid grid-cols-4 gap-3.5">
+        <!-- Target 1: Public Map -->
+        <div class="bg-[#F8F6EB] text-[#1F273D] p-3 rounded-xl border-t-4 border-[#354578] shadow-lg space-y-1.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase text-[#354578] flex items-center space-x-1">
+              <span>🗺️</span>
+              <span>PUBLIC GIS MAP</span>
+            </h3>
+          </div>
+          <ul class="text-[10px] font-bold text-slate-700 space-y-0.5 list-disc pl-3">
+            <li>Auto-closes flooded arterial road</li>
+            <li>Broadcasts ward emergency alert</li>
+            <li>Shows real-time clear corridors</li>
+          </ul>
+        </div>
+
+        <!-- Target 2: Council Command -->
+        <div class="bg-[#F8F6EB] text-[#1F273D] p-3 rounded-xl border-t-4 border-[#F4B942] shadow-lg space-y-1.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase text-[#354578] flex items-center space-x-1">
+              <span>🏛️</span>
+              <span>COUNCIL DASH</span>
+            </h3>
+          </div>
+          <ul class="text-[10px] font-bold text-slate-700 space-y-0.5 list-disc pl-3">
+            <li>Instant triage queue &amp; 5 AI checks</li>
+            <li>Auto squad specialization match</li>
+            <li>Complete audit trail &amp; metrics</li>
+          </ul>
+        </div>
+
+        <!-- Target 3: Field Crew Portal -->
+        <div class="bg-[#F8F6EB] text-[#1F273D] p-3 rounded-xl border-t-4 border-[#354578] shadow-lg space-y-1.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase text-[#354578] flex items-center space-x-1">
+              <span>🚒</span>
+              <span>FIELD CREW</span>
+            </h3>
+          </div>
+          <ul class="text-[10px] font-bold text-slate-700 space-y-0.5 list-disc pl-3">
+            <li>Safe Detour bypassing flooded nodes</li>
+            <li>4-Step Stepper (Dispatched &rarr; On-Site)</li>
+            <li>Photographic proof reopens road</li>
+          </ul>
+        </div>
+
+        <!-- Target 4: Relief Desk -->
+        <div class="bg-[#F8F6EB] text-[#1F273D] p-3 rounded-xl border-t-4 border-[#F4B942] shadow-lg space-y-1.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-black uppercase text-[#354578] flex items-center space-x-1">
+              <span>🏠</span>
+              <span>RELIEF DESK</span>
+            </h3>
+          </div>
+          <ul class="text-[10px] font-bold text-slate-700 space-y-0.5 list-disc pl-3">
+            <li>Capacity-aware nearest shelter match</li>
+            <li>Live bed occupancy deduction</li>
+            <li>Family &amp; special needs allocation</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FOOTER BAR: PREDICTRA BRANDING & NAVIGATION BUTTON -->
+    <div class="relative z-10 flex items-center justify-between pt-1 border-t border-white/20 text-xs font-mono text-[#F8F6EB]">
+      <div class="flex items-center space-x-4">
+        <span>Team Predictra · ResQCity Urban Response Engine</span>
+        <span class="opacity-60">|</span>
+        <span class="text-[#F4B942] font-bold">1.2ms Verification Latency</span>
+        <span class="opacity-60">|</span>
+        <span class="text-white font-bold">23 / 23 Tests Passed (100%)</span>
+      </div>
+      
+      <!-- Template Arrow Button -->
+      <div class="w-8 h-8 rounded-full bg-[#F4B942] text-[#1F273D] flex items-center justify-center font-bold text-base shadow-md">
+        →
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
