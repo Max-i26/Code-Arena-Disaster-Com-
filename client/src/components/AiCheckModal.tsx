@@ -180,7 +180,7 @@ export const AiCheckModal: React.FC<AiCheckModalProps> = ({
               <span className="font-bold text-white">Submitted Photo & Description:</span>
               <p className="text-slate-200 italic">"{hazardCase.description || 'No description provided.'}"</p>
               <div className="text-xs text-slate-400 font-mono">
-                Location: {hazardCase.location.lat.toFixed(4)}, {hazardCase.location.lng.toFixed(4)} ({hazardCase.location.wardName})
+                Location: {(hazardCase.location?.lat ?? 6.9271).toFixed(4)}, {(hazardCase.location?.lng ?? 79.8612).toFixed(4)} ({hazardCase.location?.wardName || 'Designated Sector'})
               </div>
             </div>
           </div>

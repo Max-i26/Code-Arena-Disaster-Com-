@@ -315,6 +315,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         {/* 2. Hazard Cases Pins */}
         {layers.hazards &&
           cases.map((c) => {
+            const lat = c.location?.lat ?? (c as any).lat ?? 6.9271;
+            const lng = c.location?.lng ?? (c as any).lng ?? 79.8612;
+            const roadName = c.location?.roadName || 'Road Segment';
             const isResolved = c.status === 'RESOLVED';
             const isCritical = c.verdictData?.urgency === 'CRITICAL' || c.roadClosed;
             const pinColor = isResolved ? '#10b981' : isCritical ? '#ef4444' : '#f59e0b';
@@ -323,7 +326,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
             return (
               <React.Fragment key={c.id}>
                 <Marker
-                  position={[c.location.lat, c.location.lng]}
+                  position={[lat, lng]}
                   icon={createCustomIcon(pinColor, iconSymbol, isCritical && !isResolved)}
                 >
                   <Popup>
@@ -338,7 +341,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                       </div>
                       <p className="text-slate-300">{c.description || 'Hazard reported on road segment.'}</p>
                       <div className="bg-slate-900 p-2 rounded border border-slate-800 space-y-1 font-mono text-[11px]">
-                        <div>Road: <span className="text-cyan-400">{c.location.roadName}</span></div>
+                        <div>Road: <span className="text-cyan-400">{roadName}</span></div>
                         <div>Status: {c.roadClosed ? <span className="text-rose-400 font-bold">⛔ ROAD CLOSED</span> : <span className="text-emerald-400">OPEN</span>}</div>
                         {c.verdictData && <div>AI Confidence: <span className="text-white font-bold">{(c.verdictData.confidenceScore * 100).toFixed(0)}%</span></div>}
                       </div>
@@ -357,7 +360,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                 {/* Flood Hazard Buffer Zone */}
                 {c.hazardType === 'FLOOD' && !isResolved && (
                   <Circle
-                    center={[c.location.lat, c.location.lng]}
+                    center={[lat, lng]}
                     radius={250}
                     pathOptions={{
                       color: '#ef4444',
@@ -414,12 +417,15 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         {/* 4. Evacuation Shelter Markers */}
         {layers.shelters &&
           shelters.map((sh) => {
-            const occupancyPct = Math.round((sh.currentOccupancy / sh.totalCapacity) * 100);
+            const lat = sh.location?.lat ?? (sh as any).lat ?? 6.9271;
+            const lng = sh.location?.lng ?? (sh as any).lng ?? 79.8612;
+            const totalCap = sh.totalCapacity || 100;
+            const occupancyPct = Math.round((sh.currentOccupancy / totalCap) * 100);
             const isFull = occupancyPct >= 95;
             return (
               <Marker
                 key={sh.id}
-                position={[sh.location.lat, sh.location.lng]}
+                position={[lat, lng]}
                 icon={createCustomIcon('#9333ea', '🏠')}
               >
                 <Popup>
@@ -436,7 +442,7 @@ export const MapComponent: React.FC<MapComponentProps> = ({
                       />
                     </div>
                     <div className="text-[10px] text-slate-400">
-                      Supplies: {sh.supplies.foodPacks} food packs · {sh.supplies.waterLitres}L water · {sh.supplies.medicalKits} med kits
+                      Supplies: {sh.supplies?.foodPacks ?? 0} food packs · {sh.supplies?.waterLitres ?? 0}L water · {sh.supplies?.medicalKits ?? 0} med kits
                     </div>
                     <div className="text-[10px] text-cyan-400 font-mono">Emergency Hotline: {sh.contactPhone}</div>
                   </div>
@@ -448,10 +454,12 @@ export const MapComponent: React.FC<MapComponentProps> = ({
         {/* 5. Field Crew Markers */}
         {layers.crews &&
           crews.map((cr) => {
+            const lat = cr.currentLocation?.lat ?? (cr as any).lat ?? 6.9271;
+            const lng = cr.currentLocation?.lng ?? (cr as any).lng ?? 79.8612;
             return (
               <Marker
                 key={cr.id}
-                position={[cr.currentLocation.lat, cr.currentLocation.lng]}
+                position={[lat, lng]}
                 icon={createCustomIcon('#059669', '🚒')}
               >
                 <Popup>

@@ -765,7 +765,7 @@ export const FieldCrewPortal: React.FC<FieldCrewPortalProps> = ({
 
               {/* GPS Coordinates */}
               {matchingCase && (
-                <GpsPanel lat={matchingCase.location.lat} lng={matchingCase.location.lng} />
+                <GpsPanel lat={matchingCase.location?.lat ?? 6.9271} lng={matchingCase.location?.lng ?? 79.8612} />
               )}
 
               {/* Safe Detour Navigation Panel */}

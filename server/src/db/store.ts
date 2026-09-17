@@ -86,10 +86,52 @@ class StateStore {
       if (fs.existsSync(PERSISTENT_FILE_PATH)) {
         const raw = fs.readFileSync(PERSISTENT_FILE_PATH, 'utf-8');
         const data = JSON.parse(raw);
-        if (Array.isArray(data.cases)) this.cases = data.cases;
+        if (Array.isArray(data.cases)) {
+          this.cases = data.cases.map((c: any) => ({
+            ...c,
+            location: c.location || {
+              lat: 6.9271,
+              lng: 79.8612,
+              roadName: c.roadName || 'Main Corridor',
+              roadHierarchy: 'ARTERIAL_A1',
+              wardId: c.wardId || 'ward-01',
+              wardName: 'Central Ward',
+            }
+          }));
+        }
         if (Array.isArray(data.reports)) this.reports = data.reports;
-        if (Array.isArray(data.shelters)) this.shelters = data.shelters;
-        if (Array.isArray(data.fieldCrews)) this.fieldCrews = data.fieldCrews;
+        if (Array.isArray(data.shelters)) {
+          this.shelters = data.shelters.map((s: any) => {
+            const fallback = SHELTERS.find(f => f.id === s.id);
+            return {
+              ...fallback,
+              ...s,
+              location: s.location || fallback?.location || {
+                lat: 6.9271,
+                lng: 79.8612,
+                roadName: 'Main Shelter Road',
+                roadHierarchy: 'ARTERIAL_A1',
+                wardId: s.wardId || 'ward-01',
+                wardName: 'Central Ward',
+              },
+              isOpen: s.isOpen ?? (s.status === 'OPEN'),
+            };
+          });
+        }
+        if (Array.isArray(data.fieldCrews)) {
+          this.fieldCrews = data.fieldCrews.map((fc: any) => {
+            const fallback = FIELD_CREWS.find(f => f.id === fc.id);
+            return {
+              ...fallback,
+              ...fc,
+              currentLocation: fc.currentLocation || fallback?.currentLocation || {
+                lat: 6.9271,
+                lng: 79.8612,
+                wardId: fc.wardId || 'ward-01'
+              }
+            };
+          });
+        }
         if (Array.isArray(data.tickets)) this.tickets = data.tickets;
         if (Array.isArray(data.reliefRequests)) this.reliefRequests = data.reliefRequests;
         if (data.config) this.config = { ...INITIAL_CONFIG, ...data.config };

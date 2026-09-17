@@ -378,7 +378,10 @@ export const CouncilDashboard: React.FC<CouncilDashboardProps> = ({
 
   const handleShowDetour = (ticket: CouncilTicket) => {
     if (!ticket.detourRoute || ticket.detourRoute.length === 0) return;
-    const coords: [number, number][] = ticket.detourRoute.map((pt) => [pt.lat, pt.lng]);
+    const coords: [number, number][] = ticket.detourRoute.map((pt: any) => [
+      Number(pt?.lat ?? pt?.[0] ?? 6.9271),
+      Number(pt?.lng ?? pt?.[1] ?? 79.8612),
+    ]);
     onShowDetour(coords);
   };
 
