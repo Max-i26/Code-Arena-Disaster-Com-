@@ -57,6 +57,8 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
                 'flood',
                 async () => {
                   await api.submitReport({
+                    userName: 'Saman Kumara (Citizen Demo)',
+                    contactPhone: '+94 77 123 4567',
                     hazardType: 'FLOOD',
                     severity: 'HIGH',
                     lat: 6.958,
@@ -138,6 +140,8 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
                 'spam',
                 async () => {
                   await api.submitReport({
+                    userName: 'Anonymous Spammer',
+                    contactPhone: '+94 77 999 0000',
                     hazardType: 'FLOOD',
                     imageUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
                     description: 'Meme cat picture test',
