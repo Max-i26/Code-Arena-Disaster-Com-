@@ -192,6 +192,17 @@ export const QuickDemoRibbon: React.FC<QuickDemoRibbonProps> = ({
           >
             <span>{runningDemo === 'spam' ? '⏳ Checking...' : '🐱 5. AI Spam Filter'}</span>
           </button>
+
+          {/* Predictra Interactive Storyboard PPT */}
+          <a
+            href="/presentation.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-900/90 via-indigo-900/90 to-cyan-900/90 hover:from-purple-800 hover:to-cyan-800 text-purple-200 border border-purple-500/80 px-3.5 py-1.5 rounded-xl transition text-xs font-extrabold shadow-lg shadow-purple-900/30 ml-auto"
+          >
+            <span>📽️ Predictra Pitch Deck (Interactive PPT)</span>
+            <span className="text-[10px] font-mono bg-purple-950 px-1.5 py-0.5 rounded text-purple-300 border border-purple-700">10-MIN</span>
+          </a>
         </div>
       </div>
     </div>
